@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Continuum Learning Portal — Satellite Mission Design for Beginners</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Chivo:ital,wght@0,100;0,300;0,400;0,700;1,300&family=Chivo+Mono:wght@200;400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  /* ---------- NDD Brand tokens (see ndd-brand-guidelines-v1.2.md) ---------- */
+  :root{
+    --ndd-black:#000000; --ndd-ink:#272727; --ndd-charcoal:#4B4B4B;
+    --ndd-gray-600:#737373; --ndd-gray-500:#9B9B9B; --ndd-gray-300:#CDCDCD; --ndd-gray-100:#F2F2F2; --ndd-white:#FFFFFF;
+    --ndd-blue-50:#F1F2FF; --ndd-blue-100:#C1C5FF; --ndd-blue-300:#8D96FF; --ndd-blue-500:#626DFB; --ndd-blue-700:#2D3CFF; --ndd-blue-900:#0013FF;
+    --ndd-yellow:#FFE600; --ndd-cyan:#5ECDFA; --ndd-pink:#EB5DC9;
+    /* Module wayfinding colors — full brand hero palette used with intent (see task notes):
+       cyan = Orbital Mechanics, magenta = Spacecraft & Payload, yellow = Targets & Ground Assets,
+       blue = core/scaffolding pages (Start, Mission Basics, Results, Reference). Vivid hero colors
+       fail WCAG text/line contrast on white (cyan ~1.8:1, yellow ~1.3:1, magenta ~3:1) so they are
+       only ever used as filled, black-outlined blocks — never as text color or thin strokes. */
+    --mod-orbit:var(--ndd-cyan); --mod-space:var(--ndd-pink); --mod-target:var(--ndd-yellow); --mod-core:var(--ndd-blue-900);
+    --font-sans:"Chivo","Inter","Helvetica Neue",Arial,sans-serif;
+    --font-mono:"Chivo Mono","Courier New",ui-monospace,SFMono-Regular,Menlo,monospace;
+    /* usability-mapped roles */
+    --bg:var(--ndd-white); --panel:var(--ndd-white); --panel2:var(--ndd-gray-100);
+    --ink:var(--ndd-black); --text-soft:var(--ndd-ink); --muted:var(--ndd-charcoal);
+    --accent:var(--ndd-blue-900); --line:rgba(0,0,0,.14); --line-strong:var(--ndd-black);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:var(--font-sans);font-weight:300;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;}
+  a{color:var(--accent);}
+  a:not(.navlink):not(.modcard):not(.navbtn){text-decoration:underline;text-underline-offset:2px;}
+  :focus-visible{outline:2px solid var(--ndd-blue-900);outline-offset:2px;border-radius:2px;}
+  .app{display:flex;min-height:100vh;}
+  /* Sidebar */
+  .sidebar{width:290px;flex-shrink:0;background:var(--ndd-white);border-right:1px solid var(--ndd-black);
+    position:fixed;top:0;left:0;bottom:0;overflow-y:auto;padding:18px 14px 40px;}
+  .brand{display:flex;align-items:center;gap:10px;padding:6px 8px 18px;border-bottom:1px solid var(--ndd-black);margin-bottom:14px;}
+  .brand-badge{width:34px;height:34px;border-radius:2px;background:var(--ndd-black);
+    display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ndd-white);font-family:var(--font-mono);}
+  .brand div h1{font-size:15px;margin:0;font-weight:400;letter-spacing:0;}
+  .brand div span{font-size:11px;color:var(--muted);font-family:var(--font-mono);letter-spacing:.02em;}
+  .navgroup{margin-bottom:6px;}
+  .navgroup-title{font-family:var(--font-mono);font-weight:200;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);
+    padding:14px 10px 6px;display:flex;align-items:center;}
+  .nav-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:7px;border:1px solid var(--ndd-black);flex-shrink:0;}
+  .nav-dot.orbit{background:var(--mod-orbit);}
+  .nav-dot.space{background:var(--mod-space);}
+  .nav-dot.target{background:var(--mod-target);}
+  .nav-dot.people{background:var(--ndd-ink);}
+  .nav-dot.core{background:var(--mod-core);}
+  .navlink{display:flex;align-items:center;gap:10px;padding:8px 10px 8px 10px;border-radius:0;cursor:pointer;
+    font-size:13.5px;color:var(--ink);border-left:3px solid transparent;min-height:36px;}
+  .navlink:hover{background:var(--ndd-gray-100);}
+  .navlink.active{background:var(--ndd-blue-50);border-left:3px solid var(--ndd-blue-900);color:var(--ndd-blue-900);font-weight:400;padding-left:7px;}
+  .navicon{width:18px;text-align:center;font-size:14px;}
+  /* Main */
+  .main{margin-left:290px;flex:1;padding:34px 44px 90px;max-width:1320px;}
+  .topbar{display:none;}
+  .menu-toggle{display:none;position:fixed;top:14px;left:14px;z-index:60;width:44px;height:44px;
+    background:var(--ndd-black);color:var(--ndd-white);border:none;border-radius:2px;font-size:18px;
+    align-items:center;justify-content:center;cursor:pointer;}
+  .sidebar-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:39;}
+  @media(max-width:900px){
+    .menu-toggle{display:flex;}
+    .sidebar{transform:translateX(-100%);transition:transform .22s ease;z-index:40;box-shadow:2px 0 16px rgba(0,0,0,.18);}
+    body.nav-open .sidebar{transform:translateX(0);}
+    body.nav-open .sidebar-backdrop{display:block;}
+    .main{margin-left:0;padding:74px 22px 80px;}
+  }
+  @media(max-width:480px){
+    .main{padding:70px 16px 70px;}
+    h1.title{font-size:29px;}
+    .grid3{grid-template-columns:1fr;}
+  }
+  section.page{display:none;animation:fade .2s ease;}
+  section.page.active{display:block;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:translateY(0);}}
+  .eyebrow{color:var(--ndd-blue-900);font-family:var(--font-mono);font-weight:200;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;}
+  /* Topic-module pages get a filled, black-outlined chip (heavier visual weight = "you're deep in a
+     chapter"); core/scaffolding pages keep the plain text treatment (lighter weight = "overview/reference"). */
+  .eyebrow.chip{display:inline-block;padding:4px 11px;border:1px solid var(--ndd-black);border-radius:2px;
+    background:var(--mod-core);color:var(--ndd-white);margin-bottom:10px;}
+  .eyebrow.chip.orbit{background:var(--mod-orbit);color:var(--ndd-black);}
+  .eyebrow.chip.space{background:var(--mod-space);color:var(--ndd-black);}
+  .eyebrow.chip.target{background:var(--mod-target);color:var(--ndd-black);}
+  /* Per-persona eyebrow colors for Module 6 — reuses the exact same tokens as .persona-card so a
+     persona's color means the same thing everywhere in the portal. */
+  .eyebrow.chip.p-bm{background:var(--ndd-blue-900);color:var(--ndd-white);}
+  .eyebrow.chip.p-te{background:var(--ndd-cyan);color:var(--ndd-black);}
+  .eyebrow.chip.p-po{background:var(--ndd-pink);color:var(--ndd-black);}
+  .eyebrow.chip.p-dc{background:var(--ndd-ink);color:var(--ndd-white);}
+  .eyebrow.chip.p-pi{background:var(--ndd-gray-500);color:var(--ndd-black);}
+  h1.title{font-family:var(--font-sans);font-weight:100;font-size:38px;line-height:1.15;letter-spacing:-0.015em;margin:0 0 8px;color:var(--ndd-black);}
+  .subtitle{font-weight:300;color:var(--ndd-ink);font-size:16.5px;margin:0 0 28px;max-width:760px;line-height:1.6;}
+  h2.sec{font-family:var(--font-sans);font-weight:400;font-size:22px;letter-spacing:0;margin:38px 0 14px;padding-top:16px;border-top:1px solid var(--line);color:var(--ndd-black);}
+  h2.sec:first-of-type{border-top:none;padding-top:0;}
+  h3.sub{font-family:var(--font-mono);font-weight:200;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin:26px 0 10px;color:var(--ndd-ink);
+    padding-bottom:6px;border-bottom:1px solid var(--ndd-gray-300);}
+  /* Cards/grids/charts/diagrams get to use the wider .main column on big screens; free-flowing
+     paragraphs stay capped at a comfortable reading width so lines don't get uncomfortably long. */
+  p{line-height:1.7;color:var(--ndd-ink);font-size:15.5px;font-weight:300;max-width:760px;}
+  .term p, .modcard p, .card p, .flowstep p{max-width:none;}
+  b{font-weight:700;color:var(--ndd-black);}
+  .card{background:var(--ndd-white);border:1px solid var(--ndd-black);border-radius:4px;padding:20px 22px;margin:16px 0;}
+  .card.tight{padding:16px 18px;}
+  .card[onclick]{transition:border-color .12s ease,background .12s ease;}
+  .card[onclick]:hover,.card[onclick]:focus-visible{border-color:var(--ndd-blue-900);background:var(--ndd-blue-50);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  @media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr;}}
+  .term{background:var(--ndd-gray-100);border:1px solid var(--ndd-gray-300);border-radius:4px;padding:12px 14px;margin:8px 0;font-size:14.5px;}
+  .term b{color:var(--ndd-black);}
+  .badge{display:inline-block;font-family:var(--font-mono);font-weight:200;font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+    padding:3px 9px;border-radius:2px;background:var(--ndd-white);color:var(--ndd-ink);border:1px solid var(--ndd-black);margin-right:6px;}
+  .badge.warn{color:var(--ndd-ink);border-color:var(--ndd-black);}
+  .badge.green{color:var(--ndd-blue-900);border-color:var(--ndd-blue-900);}
+  .callout{border-left:3px solid var(--ndd-blue-900);background:var(--ndd-blue-50);padding:12px 16px;border-radius:0 4px 4px 0;margin:16px 0;font-size:15px;max-width:760px;}
+  .callout.q{border-left-color:var(--ndd-black);background:var(--ndd-gray-100);}
+  .callout b{color:var(--ndd-black);}
+  .callout.q b{color:var(--ndd-black);}
+  figure{margin:20px 0;text-align:center;}
+  figure img{max-width:100%;border-radius:4px;border:1px solid var(--ndd-black);display:block;margin:0 auto;}
+  figcaption{font-family:var(--font-mono);font-weight:200;font-size:12px;letter-spacing:.02em;color:var(--muted);margin-top:8px;}
+  .imgfallback{background:var(--ndd-gray-100);border:1px dashed var(--ndd-gray-500);border-radius:4px;padding:34px 20px;color:var(--muted);font-size:13px;}
+  .chartbox{background:var(--ndd-white);border:1px solid var(--ndd-black);border-radius:4px;padding:18px;margin:18px 0;}
+  .chartbox canvas{max-height:280px;}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:13.5px;}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--ndd-gray-300);}
+  tr:last-child td{border-bottom:1px solid var(--ndd-black);}
+  th{color:var(--ndd-ink);font-family:var(--font-mono);font-weight:200;font-size:12px;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--ndd-black);}
+  tbody tr:hover td{background:var(--ndd-gray-100);}
+  .pillrow{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;}
+  .glossary-search{width:100%;padding:12px 14px;border-radius:4px;border:1px solid var(--ndd-black);
+    background:var(--ndd-white);color:var(--ndd-black);font-family:var(--font-sans);font-size:15px;margin-bottom:18px;}
+  .glossary-search::placeholder{color:var(--ndd-gray-600);}
+  .glossary-count{font-family:var(--font-mono);font-weight:200;font-size:12px;letter-spacing:.03em;color:var(--muted);margin:-10px 0 14px;}
+  .gterm{padding:14px 0;border-bottom:1px solid var(--ndd-gray-300);}
+  .gterm h4{margin:0 0 4px;color:var(--ndd-black);font-size:15px;font-weight:400;}
+  .gterm span.tag{font-family:var(--font-mono);font-weight:200;font-size:10.5px;color:var(--muted);letter-spacing:.02em;}
+  .flowstep{background:var(--ndd-white);border:1px solid var(--ndd-black);border-radius:4px;padding:14px 16px;text-align:center;font-size:13.5px;}
+  .flowstep[onclick]{transition:transform .12s ease,box-shadow .12s ease;}
+  .flowstep[onclick]:hover{transform:translateY(-2px);box-shadow:0 3px 0 rgba(0,0,0,.9);}
+  .flowstep[onclick]:focus-visible{transform:translateY(-2px);}
+  .flowarrow{display:flex;align-items:center;justify-content:center;color:var(--ndd-black);font-size:20px;}
+  .miniquiz{display:none;}
+  .homehero{margin-bottom:8px;border:1px solid var(--ndd-black);border-radius:4px;overflow:hidden;}
+  .homehero img{width:100%;display:block;max-height:340px;object-fit:cover;}
+  .homehero .htext{padding:22px 26px 4px;background:var(--ndd-white);}
+  .yellow-mark{background:var(--ndd-yellow);padding:0 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone;}
+  .modcard{display:block;background:var(--ndd-white);border:1px solid var(--ndd-black);border-radius:4px;padding:18px;
+    text-decoration:none;color:var(--ink);cursor:pointer;transition:.12s;}
+  .modcard:hover{border-color:var(--ndd-blue-900);background:var(--ndd-blue-50);}
+  .modcard:focus-visible{background:var(--ndd-blue-50);}
+  .modcard .num{font-family:var(--font-mono);font-weight:200;font-size:11px;color:var(--ndd-blue-900);letter-spacing:.06em;text-transform:uppercase;}
+  .modcard h4{margin:6px 0 6px;font-size:16px;font-weight:400;}
+  .modcard p{font-size:13px;margin:0;color:var(--muted);}
+  .modcard.mc-core{border-top:4px solid var(--mod-core);}
+  .modcard.mc-orbit{border-top:4px solid var(--mod-orbit);}
+  .modcard.mc-space{border-top:4px solid var(--mod-space);}
+  .modcard.mc-target{border-top:4px solid var(--mod-target);}
+  .footer-nav{display:flex;justify-content:space-between;margin-top:50px;padding-top:20px;border-top:1px solid var(--ndd-black);}
+  .navbtn{background:var(--ndd-white);border:1px solid var(--ndd-black);border-radius:4px;padding:10px 16px;font-family:var(--font-sans);font-size:13px;cursor:pointer;color:var(--ndd-black);min-height:40px;}
+  .navbtn:hover{border-color:var(--ndd-blue-900);color:var(--ndd-blue-900);}
+  code{background:var(--ndd-gray-100);border:1px solid var(--ndd-gray-300);padding:1px 6px;border-radius:2px;font-family:var(--font-mono);font-size:12.5px;color:var(--ndd-ink);}
+
+  /* ---- Persona/stakeholder cards (Reference: Use Cases, Stakeholders & Phases) ---- */
+  .persona-card{background:var(--ndd-white);border:1px solid var(--ndd-black);border-left-width:5px;border-radius:4px;padding:16px 18px;margin:0;}
+  .persona-card.p-bm{border-left-color:var(--ndd-blue-900);}
+  .persona-card.p-te{border-left-color:var(--ndd-cyan);}
+  .persona-card.p-po{border-left-color:var(--ndd-pink);}
+  .persona-card.p-dc{border-left-color:var(--ndd-ink);}
+  .persona-card.p-pi{border-left-color:var(--ndd-gray-500);}
+  .persona-card h4{margin:0 0 2px;font-size:16px;font-weight:400;}
+  .role-tag{font-family:var(--font-mono);font-weight:200;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px;}
+  .persona-card .role-tag{margin-bottom:10px;}
+  .persona-card dl{margin:0;}
+  .persona-card dt{font-family:var(--font-mono);font-weight:200;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ndd-blue-900);margin:10px 0 3px;}
+  .persona-card dd{margin:0;margin-inline-start:0;font-size:13.5px;line-height:1.55;}
+  /* Small pill flagging content sourced specifically from the Jul 2026 Thales deal correspondence,
+     kept visually distinct from content grounded in the original kickoff/journey docs (per source doc). */
+  .tag-confirmed{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-weight:200;
+    font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ndd-black);background:var(--ndd-yellow);
+    border:1px solid var(--ndd-black);border-radius:2px;padding:2px 7px;margin:6px 0 2px;}
+  .deal-note{display:block;margin-top:8px;padding:8px 10px;border:1px dashed var(--ndd-black);border-radius:4px;
+    background:var(--ndd-gray-100);font-size:13px;line-height:1.5;}
+  /* Distinct from tag-confirmed on purpose: this flags reasoned, plausible inference — NOT something
+     stated in a source document. Never let the two look similar enough to confuse. */
+  .tag-inferred{display:inline-flex;align-items:center;gap:5px;font-family:var(--font-mono);font-weight:200;
+    font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--ndd-white);
+    border:1px dashed var(--ndd-gray-500);border-radius:2px;padding:2px 7px;margin:6px 0 2px;}
+  .infer-note{display:block;margin-top:8px;padding:8px 10px;border:1px dashed var(--ndd-gray-500);border-radius:4px;
+    background:var(--ndd-white);font-size:13px;line-height:1.5;color:var(--ndd-charcoal);}
+  .persona-legend{display:flex;flex-wrap:wrap;gap:14px;margin:14px 0 24px;font-size:12.5px;color:var(--muted);}
+  .persona-legend .k{display:flex;align-items:center;gap:6px;}
+  .persona-legend .sw{width:11px;height:11px;border-radius:50%;border:1px solid var(--ndd-black);flex-shrink:0;}
+</style>
+</head>
+<body>
+<button class="menu-toggle" aria-label="Open navigation menu" aria-expanded="false" onclick="toggleMobileNav()">☰</button>
+<div class="sidebar-backdrop" onclick="closeMobileNav()"></div>
+<div class="app">
+  <nav class="sidebar" id="sidebar" aria-label="Portal navigation"></nav>
+  <main class="main" id="main">
+
+  <!-- ===================== HOME ===================== -->
+  <section class="page active" id="home">
+    <div class="homehero">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/9/97/The_Earth_seen_from_Apollo_17.jpg"
+           onerror="imgFallback(this,'Earth as seen from space (Apollo 17, NASA/Wikimedia Commons)')" alt="Earth seen from space" style="border-bottom:1px solid var(--ndd-black);">
+      <div class="htext">
+        <div class="eyebrow">Continuum Learning Portal</div>
+        <h1 class="title" style="margin-bottom:2px;">Learn how <span class="yellow-mark">satellite missions</span> are designed</h1>
+        <p class="subtitle" style="margin-bottom:18px;">A plain-language guide to every concept behind the Continuum mission-design tool — no engineering background required.</p>
+      </div>
+    </div>
+
+    <p>Continuum is software that helps engineers design space missions: choosing an orbit, building a spacecraft,
+    pointing it at the right targets on Earth, and predicting how well the whole system will perform before anyone
+    builds anything. This portal walks through <b>every idea behind that process</b> — one bite-sized topic at a time —
+    using diagrams, charts, and real images instead of jargon.</p>
+
+    <div class="callout"><b>Who this is for:</b> you don't need a physics or engineering degree. If you can read a chart
+    and follow an analogy, you can learn this. Each page builds on the last, so the recommended path is to go through
+    the modules in order using the sidebar — but feel free to jump around.</div>
+
+    <h2 class="sec">Choose where to start</h2>
+    <div class="grid3">
+      <div class="modcard mc-core" onclick="showPage('overview')">
+        <div class="num">Start Here</div><h4>🛰️ What Is Continuum?</h4>
+        <p>The big-picture workflow: how a mission goes from idea to simulated results.</p>
+      </div>
+      <div class="modcard mc-core" onclick="showPage('m1-basics')">
+        <div class="num">Module 1</div><h4>📁 Mission Basics</h4>
+        <p>Projects, missions, and the "mission guide" — the containers everything else lives in.</p>
+      </div>
+      <div class="modcard mc-orbit" onclick="showPage('m2-orbit')">
+        <div class="num">Module 2</div><h4>🌐 Orbital Mechanics</h4>
+        <p>What an orbit is, the forces that shape it, and how we describe one with numbers.</p>
+      </div>
+      <div class="modcard mc-space" onclick="showPage('m3-anatomy')">
+        <div class="num">Module 3</div><h4>🛰️ Spacecraft & Payload</h4>
+        <p>What a satellite is made of, and the mass/power "budgets" engineers track obsessively.</p>
+      </div>
+      <div class="modcard mc-target" onclick="showPage('m4-targets')">
+        <div class="num">Module 4</div><h4>🎯 Targets & Ground Assets</h4>
+        <p>How missions define what on Earth they're looking at — and who's listening from the ground.</p>
+      </div>
+      <div class="modcard mc-core" onclick="showPage('m5-trajectories')">
+        <div class="num">Module 5</div><h4>📊 Reading Simulation Results</h4>
+        <p>How to make sense of the plots and numbers a mission simulation spits out.</p>
+      </div>
+    </div>
+
+    <h2 class="sec">Quick reference</h2>
+    <div class="grid2">
+      <div class="card tight" style="cursor:pointer" onclick="showPage('glossary')">
+        <h4 style="margin:0 0 6px;color:#000000">📖 Glossary</h4>
+        <p style="margin:0;font-size:13.5px;">Every term in this portal, defined in one line, searchable.</p>
+      </div>
+      <div class="card tight" style="cursor:pointer" onclick="showPage('bigpicture')">
+        <h4 style="margin:0 0 6px;color:#000000">🧩 How It All Fits Together</h4>
+        <p style="margin:0;font-size:13.5px;">One diagram connecting every module you just learned.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="overview">
+    <div class="eyebrow">Start Here</div>
+    <h1 class="title">What Is Continuum?</h1>
+    <p class="subtitle">Continuum is a mission-design tool: you describe a satellite mission on a computer, and it
+    simulates how that mission would actually behave in space — before anyone spends a dollar building hardware.</p>
+
+    <div class="callout"><b>Analogy:</b> think of Continuum like architecture software for satellites. An architect
+    doesn't pour concrete to test if a building design works — they model it first. Continuum lets space engineers
+    do the same thing: model an orbit, a spacecraft, and a target, then see whether the design actually accomplishes
+    the mission's goal.</div>
+
+    <h2 class="sec">The mission design workflow</h2>
+    <p>Every mission in Continuum is built from four ingredients that all feed into a simulation, which then produces
+    results the team uses to judge — and improve — the design.</p>
+
+    <div class="card">
+      <div class="grid2" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+        <div class="flowstep">🌐<br><b>Orbit</b><br><span style="color:var(--muted)">Where the spacecraft flies</span></div>
+        <div class="flowstep">🛰️<br><b>Spacecraft</b><br><span style="color:var(--muted)">What it's made of</span></div>
+        <div class="flowstep">🎯<br><b>Targets</b><br><span style="color:var(--muted)">What it's looking at</span></div>
+        <div class="flowstep">📡<br><b>Ground Assets</b><br><span style="color:var(--muted)">Who it talks to</span></div>
+      </div>
+      <div style="text-align:center;font-size:22px;color:var(--accent);margin:10px 0;">↓ ↓ ↓ ↓</div>
+      <div class="flowstep" style="background:var(--panel);border-color:var(--accent);">⚙️ <b>Run Mission</b> — the simulation engine combines all four inputs and computes what physically happens over time</div>
+      <div style="text-align:center;font-size:22px;color:var(--accent);margin:10px 0;">↓</div>
+      <div class="grid3">
+        <div class="flowstep">📈<br><b>Trajectories & Orbit Plots</b></div>
+        <div class="flowstep">⚙️🔋<br><b>Mass & Power Budgets</b></div>
+        <div class="flowstep">📏<br><b>Sizing Outputs</b></div>
+      </div>
+    </div>
+
+    <h3 class="sub">Why simulate instead of just building?</h3>
+    <p>Spacecraft are expensive and impossible to repair once launched. A single design mistake — an orbit that spends
+    too much time in Earth's shadow, or a battery too small to survive it — can end a mission worth tens of millions
+    of dollars. Simulation lets engineers try thousands of "what if" variations for free, long before committing to
+    hardware.</p>
+
+    <h3 class="sub">The five things you'll learn in this portal</h3>
+    <table>
+      <tr><th>Module</th><th>Question it answers</th></tr>
+      <tr><td>1 · Mission Basics</td><td>How is a mission organized inside the software?</td></tr>
+      <tr><td>2 · Orbital Mechanics</td><td>What keeps a satellite up there, and how do we describe its path?</td></tr>
+      <tr><td>3 · Spacecraft & Payload</td><td>What's inside a satellite, and what limits its design?</td></tr>
+      <tr><td>4 · Targets & Ground Assets</td><td>What is the satellite looking at or talking to?</td></tr>
+      <tr><td>5 · Reading Results</td><td>How do you judge whether a mission design actually works?</td></tr>
+    </table>
+  </section>
+  <section class="page" id="m1-basics">
+    <div class="eyebrow">Module 1 · Mission Basics</div>
+    <h1 class="title">Projects, Missions & the Mission Guide</h1>
+    <p class="subtitle">Before touching orbits or spacecraft, it helps to understand how the software organizes your
+    work — like knowing what a "folder" and a "file" are before you use a computer.</p>
+
+    <h2 class="sec">The container hierarchy</h2>
+    <div class="card">
+      <div class="grid3">
+        <div class="flowstep">🗂️<br><b>Project</b><br><span style="color:var(--muted);font-size:12.5px">A workspace that can hold many missions — like a folder</span></div>
+        <div class="flowstep">🚀<br><b>Mission</b><br><span style="color:var(--muted);font-size:12.5px">One specific spacecraft design + orbit + goal — like a file inside that folder</span></div>
+        <div class="flowstep">🧭<br><b>Mission Guide</b><br><span style="color:var(--muted);font-size:12.5px">A step-by-step wizard: Orbit → Payload → Vendor</span></div>
+      </div>
+    </div>
+
+    <p>A <b>Project</b> is the top-level workspace — think of it as a folder that groups related work together
+    (e.g. "2027 Earth Observation Study"). Inside a project you can create, rename, or delete any number of
+    <b>Missions</b>. Each mission is a self-contained design: a specific orbit, a specific spacecraft, specific
+    targets. Changing one mission doesn't affect the others, so teams often create several missions to compare
+    design options side-by-side.</p>
+
+    <div class="callout"><b>Analogy:</b> a Project is like a shared Google Drive folder for a research question.
+    Each Mission inside it is a separate document — a distinct "version" of the design you're exploring.</div>
+
+    <h3 class="sub">Creating a new mission: two starting points</h3>
+    <div class="grid2">
+      <div class="term"><b>Start from scratch</b> — give it a project name and mission name, then build every
+      input yourself (orbit, spacecraft, targets).</div>
+      <div class="term"><b>Use the Mission Guide</b> — a guided wizard that walks you through the three most
+      important early decisions in order:</div>
+    </div>
+    <div class="grid3" style="margin-top:10px;">
+      <div class="term"><b>1. Orbit</b> — where will the spacecraft fly? (see Module 2)</div>
+      <div class="term"><b>2. Payload</b> — what instrument does the mission carry? (see Module 3)</div>
+      <div class="term"><b>3. Vendor</b> — whose hardware/manufacturing options will be considered? (see Module 3)</div>
+    </div>
+
+    <h3 class="sub">Everyday mission actions</h3>
+    <p>Once a mission exists, a small set of actions cover almost everything you'll do day-to-day:</p>
+    <table>
+      <tr><th>Action</th><th>What it does</th></tr>
+      <tr><td><code>Save Mission</code></td><td>Stores your current inputs so you don't lose changes.</td></tr>
+      <tr><td><code>Save as New Mission</code></td><td>Duplicates the current design under a new name — the standard way to compare variants without losing the original.</td></tr>
+      <tr><td><code>Run Mission</code></td><td>Executes the simulation using all current inputs, producing the results in Module 5.</td></tr>
+      <tr><td><code>Rename / Delete Mission</code></td><td>Basic housekeeping as a project accumulates many design attempts.</td></tr>
+    </table>
+
+    <div class="callout q"><b>Why it matters:</b> mission design is iterative — you rarely get the orbit, spacecraft,
+    and targets right on the first try. "Save as New Mission" is what lets engineers explore many variations
+    (a lower orbit, a bigger battery, a different target region) as separate, comparable missions rather than
+    overwriting their only copy.</div>
+  </section>
+  <section class="page" id="m2-orbit">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">What Is an Orbit?</h1>
+    <p class="subtitle">An orbit is not "floating in space" — it's a very fast, continuous fall that keeps missing the ground.</p>
+
+    <div class="card">
+      <svg viewBox="0 0 640 320" width="100%" style="max-width:640px;display:block;margin:0 auto;">
+        <circle cx="150" cy="230" r="90" fill="#272727" stroke="#000000"/>
+        <text x="150" y="235" text-anchor="middle" fill="#FFFFFF" font-size="12">Earth</text>
+        <!-- cannon tower -->
+        <rect x="140" y="120" width="14" height="30" fill="#000000"/>
+        <!-- trajectories of increasing speed -->
+        <path d="M154,132 Q230,160 210,230" stroke="#9B9B9B" stroke-width="2.5" fill="none"/>
+        <path d="M154,132 Q290,150 300,235" stroke="#4B4B4B" stroke-width="2.5" fill="none"/>
+        <!-- highlighted "achieved orbit" path: black backing stroke + cyan overlay keeps it visible on white -->
+        <path d="M154,132 Q420,120 470,180 Q520,235 420,270 Q280,300 200,235" stroke="#000000" stroke-width="6" fill="none"/>
+        <path d="M154,132 Q420,120 470,180 Q520,235 420,270 Q280,300 200,235" stroke="#5ECDFA" stroke-width="3" fill="none"/>
+        <text x="215" y="220" fill="#737373" font-size="11">too slow — falls back</text>
+        <text x="305" y="200" fill="#4B4B4B" font-size="11">faster — falls farther</text>
+        <circle cx="458" cy="108" r="5" fill="#5ECDFA" stroke="#000000"/>
+        <text x="470" y="112" fill="#000000" font-size="12" font-weight="bold">fast enough — keeps missing the ground: ORBIT</text>
+      </svg>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:6px;">Newton's cannonball thought experiment: the faster the cannonball is fired, the farther it travels before gravity pulls it down. Fire it fast enough, and the ground curves away beneath it just as fast as it falls — so it never lands.</p>
+    </div>
+
+    <h2 class="sec">The tug-of-war that makes an orbit</h2>
+    <p>Every orbit is a balance between two things pulling against each other:</p>
+    <div class="grid2">
+      <div class="term">⬇️ <b>Gravity</b> — constantly pulling the spacecraft straight down toward the center of the planet.</div>
+      <div class="term">➡️ <b>Forward velocity</b> — the spacecraft's sideways speed, which keeps trying to carry it off in a straight line.</div>
+    </div>
+    <p>Neither one wins. Gravity keeps bending the spacecraft's path back toward the planet, while its sideways
+    speed keeps carrying it forward — the result is a closed curve (usually an ellipse) that repeats forever, as
+    long as nothing else interferes (Module 2 covers a few things that <i>do</i> interfere: drag, uneven gravity, etc.).</p>
+
+    <div class="callout"><b>Key intuition:</b> a satellite is not "escaping gravity" — gravity is exactly what keeps
+    it orbiting instead of flying off into space. Remove gravity entirely and the satellite would travel in a
+    straight line, away from Earth forever.</div>
+
+    <h3 class="sub">Two flavors of orbit shape</h3>
+    <div class="grid2">
+      <div class="term"><b>Circular orbit</b> — constant altitude and constant speed. Simple, common for communication
+      and Earth-observation satellites that want a steady, predictable view.</div>
+      <div class="term"><b>Elliptical orbit</b> — altitude and speed both vary continuously: fastest and lowest at
+      "perigee" (closest point), slowest and highest at "apogee" (farthest point).</div>
+    </div>
+  </section>
+  <section class="page" id="m2-bodies">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">Central Bodies: What Is the Spacecraft Orbiting?</h1>
+    <p class="subtitle">Before you can define an orbit, you have to say what it's an orbit <i>around</i>.</p>
+
+    <p>Continuum lets a mission be built around different <b>central bodies</b> — the object whose gravity dominates
+    the spacecraft's motion. The two most common choices are:</p>
+
+    <div class="grid2">
+      <div class="card tight"><h4 style="margin:0 0 6px;color:#000000">🌍 Earth</h4>
+        <p style="margin:0;font-size:13.5px;">The default choice for almost all practical missions — communications,
+        weather, imaging, GPS-like navigation. Earth's gravity, atmosphere, and shape all factor into the simulation.</p></div>
+      <div class="card tight"><h4 style="margin:0 0 6px;color:#000000">🌕 Moon</h4>
+        <p style="margin:0;font-size:13.5px;">Used for lunar missions — orbiters, landers, or relay satellites that
+        support surface missions. The Moon has no atmosphere and much weaker gravity, so the physics simplify in
+        some ways (no drag) and change in others (very different gravity field).</p></div>
+    </div>
+
+    <div class="callout"><b>Why the central body matters:</b> everything downstream — gravity strength, whether
+    atmospheric drag applies, how eclipses happen, even how fast the body rotates beneath the spacecraft — depends
+    on which body you pick. Switching a mission from Earth to the Moon isn't a small tweak; it changes almost every
+    input in the simulation.</div>
+
+    <table>
+      <tr><th>Property</th><th>Earth</th><th>Moon</th></tr>
+      <tr><td>Atmosphere (drag applies?)</td><td>Yes, up to ~700 km</td><td>No — essentially none</td></tr>
+      <tr><td>Relative gravity strength</td><td>1× (reference)</td><td>~0.17×</td></tr>
+      <tr><td>Rotation period</td><td>24 hours</td><td>~27.3 days</td></tr>
+      <tr><td>Typical missions</td><td>Comms, imaging, navigation, science</td><td>Lunar orbiters, relay satellites, landers</td></tr>
+    </table>
+  </section>
+  <section class="page" id="m2-elements">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">Orbital Elements: Describing an Orbit With Numbers</h1>
+    <p class="subtitle">An orbit's exact size, shape, and orientation can be fully described with just six numbers, called the classical (or "Keplerian") orbital elements.</p>
+
+    <h2 class="sec">Part 1 — the shape of the ellipse</h2>
+    <div class="card">
+      <svg viewBox="0 0 640 300" width="100%" style="max-width:640px;display:block;margin:0 auto;">
+        <ellipse cx="340" cy="150" rx="260" ry="110" fill="none" stroke="#000000" stroke-width="2"/>
+        <circle cx="220" cy="150" r="26" fill="#272727" stroke="#000000"/>
+        <text x="220" y="155" text-anchor="middle" fill="#FFFFFF" font-size="10">Earth</text>
+        <circle cx="220" cy="150" r="2.5" fill="#000000"/>
+        <!-- semi-major axis -->
+        <line x1="220" y1="150" x2="80" y2="150" stroke="#000000" stroke-width="2"/>
+        <text x="140" y="140" fill="#000000" font-size="12" font-weight="bold">a (semi-major axis)</text>
+        <!-- perigee / apogee: filled cyan dots (module color) with black outline, black text labels -->
+        <circle cx="80" cy="150" r="5" fill="#5ECDFA" stroke="#000000"/>
+        <text x="80" y="175" text-anchor="middle" fill="#000000" font-size="11">perigee (closest)</text>
+        <circle cx="600" cy="150" r="5" fill="#5ECDFA" stroke="#000000"/>
+        <text x="600" y="175" text-anchor="middle" fill="#000000" font-size="11">apogee (farthest)</text>
+        <!-- true anomaly -->
+        <line x1="220" y1="150" x2="420" y2="65" stroke="#4B4B4B" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <path d="M255,150 A35,35 0 0,0 240,120" fill="none" stroke="#4B4B4B" stroke-width="1.5"/>
+        <text x="290" y="105" fill="#4B4B4B" font-size="11">true anomaly (ν)<br/></text>
+        <circle cx="420" cy="65" r="5" fill="#5ECDFA" stroke="#000000"/>
+        <text x="440" y="60" fill="#000000" font-size="11">spacecraft</text>
+      </svg>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:6px;">Earth sits at one focus of the ellipse (not the center). The orbit is closest at perigee and farthest at apogee.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="term"><b>Semi-major axis (a)</b> — half the "long way across" the ellipse. Essentially, the
+      orbit's overall size — bigger a means a bigger, slower, higher orbit.</div>
+      <div class="term"><b>Eccentricity (e)</b> — how "squashed" the ellipse is, from 0 (perfect circle) to just
+      under 1 (a long, thin ellipse).</div>
+    </div>
+
+    <h2 class="sec">Part 2 — the orbit's orientation in space</h2>
+    <div class="card">
+      <svg viewBox="0 0 640 280" width="100%" style="max-width:640px;display:block;margin:0 auto;">
+        <ellipse cx="320" cy="200" rx="230" ry="35" fill="none" stroke="#9B9B9B" stroke-width="1.5" stroke-dasharray="3 3"/>
+        <text x="560" y="205" fill="#737373" font-size="10">equatorial plane</text>
+        <circle cx="320" cy="200" r="22" fill="#272727" stroke="#000000"/>
+        <ellipse cx="320" cy="150" rx="230" ry="90" fill="rgba(94,205,250,0.14)" stroke="#000000" stroke-width="2" transform="rotate(-8 320 150)"/>
+        <text x="470" y="70" fill="#000000" font-size="11">tilted orbital plane</text>
+        <path d="M400,200 A90,20 0 0,1 430,175" fill="none" stroke="#0013FF" stroke-width="1.5"/>
+        <text x="430" y="230" fill="#0013FF" font-size="11">inclination (i) — tilt vs. equator</text>
+        <line x1="90" y1="200" x2="320" y2="200" stroke="#0013FF" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <text x="120" y="190" fill="#0013FF" font-size="11">RAAN (Ω) — swivel of the plane</text>
+        <path d="M270,230 Q300,215 320,200" fill="none" stroke="#0013FF" stroke-width="1.5"/>
+        <text x="230" y="250" fill="#0013FF" font-size="11">argument of perigee (ω) — rotation within the plane</text>
+      </svg>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:6px;">Three more numbers pin down how the orbital plane is tilted and rotated in 3D space around Earth.</p>
+    </div>
+
+    <h2 class="sec">All six, at a glance</h2>
+    <table>
+      <tr><th>#</th><th>Element</th><th>Plain-language meaning</th></tr>
+      <tr><td>1</td><td>Semi-major axis (a)</td><td>How big the orbit is overall</td></tr>
+      <tr><td>2</td><td>Eccentricity (e)</td><td>How stretched/oval the orbit is</td></tr>
+      <tr><td>3</td><td>Inclination (i)</td><td>How tilted the orbit is relative to the equator</td></tr>
+      <tr><td>4</td><td>Right ascension of ascending node (Ω / RAAN)</td><td>Which way the tilted plane is "facing" in space</td></tr>
+      <tr><td>5</td><td>Argument of perigee (ω)</td><td>Where the closest point sits within the tilted plane</td></tr>
+      <tr><td>6</td><td>True anomaly (ν)</td><td>Where the spacecraft is <i>right now</i> along its path</td></tr>
+    </table>
+    <div class="callout"><b>Why six numbers?</b> A satellite's position and velocity in 3D space actually take six
+    numbers to describe fully (three for position, three for velocity). The orbital elements are just a more
+    intuitive repackaging of those same six numbers — describing the <i>shape</i> and <i>orientation</i> of the path
+    rather than a single instantaneous position and velocity.</div>
+  </section>
+  <section class="page" id="m2-track">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">Trajectories & Ground Tracks</h1>
+    <p class="subtitle">Two different ways to visualize where a spacecraft actually goes.</p>
+
+    <div class="grid2">
+      <div class="term"><b>Trajectory</b> — the spacecraft's full 3D path through space over time (its position at
+      every moment, in three dimensions).</div>
+      <div class="term"><b>Ground track</b> — project that same path straight down onto the Earth's surface, and
+      trace the line it draws — the "shadow" of the orbit on a flat map.</div>
+    </div>
+
+    <div class="chartbox">
+      <canvas id="chart-groundtrack" height="220"></canvas>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px;">Example ground track for an inclined orbit: a repeating wave pattern as the satellite crosses back and forth over the equator while Earth rotates beneath it.</p>
+    </div>
+
+    <p>Because Earth keeps spinning underneath the spacecraft, even a perfectly repeating orbit traces a
+    <i>different</i> line across the map on each pass — that's why ground tracks look like a series of parallel
+    "S" curves marching sideways across a world map instead of retracing the exact same line every time.</p>
+
+    <div class="callout"><b>Why it matters for mission design:</b> if a mission's goal is to photograph a specific
+    city every day, the ground track — not just the orbit's shape — determines whether the satellite will actually
+    pass over that city, and how often.</div>
+
+    <h3 class="sub">Reading a trajectory plot</h3>
+    <div class="chartbox">
+      <canvas id="chart-altitude" height="200"></canvas>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px;">Altitude over time for an elliptical orbit — rising to apogee, falling to perigee, repeating every orbital period.</p>
+    </div>
+  </section>
+  <section class="page" id="m2-gravity">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">Gravity Models: How Precisely Should We Model "Down"?</h1>
+    <p class="subtitle">Earth isn't a perfect sphere with perfectly even gravity — and how much of that mess you model changes how accurate (and how slow) a simulation is.</p>
+
+    <p>Every gravity model is a trade-off between <b>simplicity/speed</b> and <b>accuracy</b>. Continuum offers three
+    increasingly detailed options:</p>
+
+    <div class="grid3">
+      <div class="card tight" style="text-align:center;">
+        <svg viewBox="0 0 140 140" width="90" height="90"><circle cx="70" cy="70" r="55" fill="#5ECDFA" stroke="#000000" stroke-width="2.5"/></svg>
+        <h4 style="margin:8px 0 4px;color:#000000">Point Mass</h4>
+        <p style="font-size:12.5px;margin:0;">Treats Earth as a perfect sphere with gravity pulling evenly from a single point at the center. Fast, simple, good enough for rough estimates.</p>
+      </div>
+      <div class="card tight" style="text-align:center;">
+        <svg viewBox="0 0 140 140" width="90" height="90"><ellipse cx="70" cy="70" rx="60" ry="50" fill="#5ECDFA" stroke="#000000" stroke-width="2.5"/></svg>
+        <h4 style="margin:8px 0 4px;color:#000000">J2</h4>
+        <p style="font-size:12.5px;margin:0;">Adds Earth's biggest real imperfection: it bulges slightly at the equator (like a very slightly squashed ball) due to its own spin. This one correction captures most of the real-world effect.</p>
+      </div>
+      <div class="card tight" style="text-align:center;">
+        <svg viewBox="0 0 140 140" width="90" height="90">
+          <path d="M70,15 C95,15 110,35 115,55 C120,80 110,100 95,115 C75,130 45,128 30,110 C15,92 15,65 25,45 C35,25 50,15 70,15Z" fill="#272727" stroke="#000000" stroke-width="2.5"/>
+        </svg>
+        <h4 style="margin:8px 0 4px;color:#000000">Spherical Harmonics</h4>
+        <p style="font-size:12.5px;margin:0;">Models the full "lumpy" gravity field — mountains, ocean trenches, and dense/light patches of crust all pull slightly differently. Most accurate, most computationally expensive.</p>
+      </div>
+    </div>
+
+    <div class="callout"><b>Real-world evidence:</b> satellite missions like NASA/German GRACE have mapped Earth's
+    actual gravity field in detail, producing "lumpy potato" globe visualizations where bulges show regions of
+    slightly stronger gravity (extra mass) and dips show slightly weaker gravity. That real, measured unevenness is
+    exactly what the spherical harmonics model captures mathematically.</div>
+
+    <h3 class="sub">Which one should a mission use?</h3>
+    <table>
+      <tr><th>Model</th><th>Best for</th><th>Trade-off</th></tr>
+      <tr><td>Point Mass</td><td>Early design, quick "does this orbit roughly make sense" checks</td><td>Fast but noticeably inaccurate over long durations</td></tr>
+      <tr><td>J2</td><td>Most everyday mission planning</td><td>Captures ~90% of the real effect for a small computational cost</td></tr>
+      <tr><td>Spherical Harmonics</td><td>Final, high-precision verification before launch</td><td>Most realistic, but slowest to compute</td></tr>
+    </table>
+  </section>
+  <section class="page" id="m2-drag">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">Atmospheric Drag</h1>
+    <p class="subtitle">Even hundreds of kilometers up, there's just enough leftover atmosphere to slowly drag a satellite out of the sky.</p>
+
+    <figure>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Thin_Blue_Line.jpg/1024px-Thin_Blue_Line.jpg"
+           onerror="imgFallback(this,'Earth\'s thin atmosphere seen edge-on from the ISS (NASA/Wikimedia Commons)')" alt="Earth's atmosphere seen from orbit">
+      <figcaption>Earth's atmosphere as seen from orbit — it looks paper-thin, but even these faint traces exert drag on low-flying satellites.</figcaption>
+    </figure>
+
+    <p>Air molecules don't stop abruptly at some altitude — they simply get rarer and rarer with height. In
+    "Low Earth Orbit" (roughly 200–700 km up), there's still just enough of them that a spacecraft moving at
+    ~7.8 km/s constantly bumps into a few, losing a tiny bit of energy every second.</p>
+
+    <div class="chartbox">
+      <canvas id="chart-decay" height="200"></canvas>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px;">Simplified example: altitude slowly decaying over time due to drag. Lower starting altitude → thicker air → faster decay.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="term">📉 <b>Effect:</b> drag steadily removes energy from the orbit, causing altitude to shrink
+      over time — left unchecked, this is how old satellites and space debris eventually burn up in the atmosphere.</div>
+      <div class="term">⛽ <b>Countermeasure:</b> many low-orbiting satellites carry thrusters and periodically
+      "boost" themselves back up to counteract drag — this uses fuel, so drag directly limits a mission's lifetime.</div>
+    </div>
+
+    <div class="callout"><b>Why altitude matters so much:</b> drag force roughly follows air density, which drops off
+    exponentially with altitude. A satellite at 300 km can decay and re-enter within weeks to months; one at 700 km
+    might stay up for decades — a huge design consideration for how much fuel to carry, or whether you need fuel
+    at all.</div>
+  </section>
+  <section class="page" id="m2-eclipse">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">Eclipses: When the Satellite Loses the Sun</h1>
+    <p class="subtitle">Once per orbit (for many satellites), Earth itself blocks the sunlight — and with it, solar power.</p>
+
+    <div class="card">
+      <svg viewBox="0 0 640 260" width="100%" style="max-width:640px;display:block;margin:0 auto;">
+        <!-- sun rays -->
+        <circle cx="40" cy="130" r="28" fill="#FFE600" stroke="#000000"/>
+        <text x="40" y="180" text-anchor="middle" fill="#4B4B4B" font-size="11">Sun</text>
+        <line x1="68" y1="100" x2="600" y2="30" stroke="#CDCDCD" stroke-width="1"/>
+        <line x1="68" y1="160" x2="600" y2="230" stroke="#CDCDCD" stroke-width="1"/>
+        <line x1="68" y1="130" x2="600" y2="130" stroke="#CDCDCD" stroke-width="1"/>
+        <!-- earth -->
+        <circle cx="330" cy="130" r="45" fill="#272727" stroke="#000000" stroke-width="2"/>
+        <text x="330" y="135" text-anchor="middle" fill="#FFFFFF" font-size="10">Earth</text>
+        <!-- shadow cone -->
+        <path d="M330,85 L600,60 L600,200 L330,175 Z" fill="#000000" opacity="0.75"/>
+        <text x="470" y="145" fill="#FFFFFF" font-size="11">Earth's shadow (umbra)</text>
+        <!-- orbit -->
+        <ellipse cx="330" cy="130" rx="230" ry="90" fill="none" stroke="#000000" stroke-width="2"/>
+        <circle cx="145" cy="150" r="6" fill="#5ECDFA" stroke="#000000"/>
+        <text x="145" y="170" text-anchor="middle" fill="#000000" font-weight="bold" font-size="11">in sunlight ☀️</text>
+        <circle cx="470" cy="185" r="6" fill="#4B4B4B" stroke="#000000"/>
+        <text x="470" y="205" text-anchor="middle" fill="#000000" font-weight="bold" font-size="11">in eclipse 🌑</text>
+      </svg>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:6px;">As the satellite orbits, part of its path passes through Earth's shadow — cutting off sunlight and solar power for that portion of the orbit.</p>
+    </div>
+
+    <p>For a satellite in low Earth orbit, this shadow period typically lasts something like 30–40 minutes out of a
+    ~90-minute orbit — meaning the spacecraft can spend roughly a third of every orbit with zero solar power.</p>
+
+    <div class="grid2">
+      <div class="term">🔋 <b>Why it matters for design:</b> spacecraft need batteries sized to survive the longest
+      eclipse in their orbit while still running critical systems (see Module 3: Power Budget).</div>
+      <div class="term">🌡️ <b>Secondary effect:</b> temperature swings between sunlight and eclipse also stress
+      hardware — engineers must design for both extremes, not just the average.</div>
+    </div>
+
+    <div class="callout"><b>Orbit choice changes eclipse behavior:</b> some special orbits (like certain "sun-synchronous"
+    orbits) are deliberately chosen to minimize or regularize eclipse time, trading orbital flexibility for more
+    predictable power availability.</div>
+  </section>
+  <section class="page" id="m2-clouds">
+    <div class="eyebrow">Module 2 · Orbital Mechanics</div>
+    <h1 class="title">Clouds: Why Weather Shows Up in Orbit Simulations</h1>
+    <p class="subtitle">Gravity and drag affect where a satellite goes — clouds affect whether it can actually see anything once it gets there.</p>
+
+    <p>Unlike gravity or drag, clouds don't change a spacecraft's physical path at all. Instead, they're modeled
+    because many missions exist specifically to <b>look at the ground</b> — Earth-imaging, agriculture monitoring,
+    disaster response — and clouds simply block that view, just like they would block a photo taken from an
+    airplane.</p>
+
+    <div class="grid2">
+      <div class="term">📷 <b>Optical payloads</b> (ordinary cameras) are completely blocked by cloud cover — no
+      image of the ground is possible on a cloudy pass.</div>
+      <div class="term">📡 <b>Radar payloads</b> can often see straight through clouds, since radio waves pass
+      through water vapor far better than visible light does.</div>
+    </div>
+
+    <p>By including average cloud-cover statistics for a target region, Continuum can help estimate how often a
+    mission will actually get a usable, cloud-free look at its target — which matters enormously for missions with
+    a strict revisit-time requirement (e.g. "photograph this field once a week").</p>
+
+    <div class="callout"><b>Why it matters:</b> a mission can have a perfect orbit and a perfect camera, and still
+    fail to deliver useful data if the target region is cloudy 80% of the time. Modeling clouds turns "can the
+    satellite physically see the target?" into a realistic probability instead of an optimistic assumption.</div>
+  </section>
+  <section class="page" id="m3-anatomy">
+    <div class="eyebrow">Module 3 · Spacecraft & Payload</div>
+    <h1 class="title">Anatomy of a Spacecraft</h1>
+    <p class="subtitle">Every satellite, no matter its mission, splits into two fundamental parts: the bus and the payload.</p>
+
+    <figure>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/International_Space_Station_after_undocking_of_STS-132.jpg/1280px-International_Space_Station_after_undocking_of_STS-132.jpg"
+           onerror="imgFallback(this,'A real spacecraft in orbit, showing solar arrays, structure, and instruments (NASA/Wikimedia Commons)')" alt="A spacecraft in orbit">
+      <figcaption>A real spacecraft: large solar arrays for power, a structural bus, and mission-specific hardware — the same basic anatomy as any satellite, just scaled up.</figcaption>
+    </figure>
+
+    <div class="card">
+      <svg viewBox="0 0 500 260" width="100%" style="max-width:460px;display:block;margin:0 auto;">
+        <rect x="40" y="100" width="18" height="60" fill="#272727"/>
+        <rect x="10" y="95" width="30" height="70" fill="#4B4B4B" stroke="#000000"/>
+        <rect x="200" y="90" width="100" height="80" rx="4" fill="#F2F2F2" stroke="#000000" stroke-width="2"/>
+        <text x="250" y="135" text-anchor="middle" fill="#000000" font-size="11">BUS</text>
+        <rect x="442" y="95" width="30" height="70" fill="#4B4B4B" stroke="#000000"/>
+        <rect x="472" y="100" width="18" height="60" fill="#272727"/>
+        <circle cx="250" cy="60" r="16" fill="#EB5DC9" stroke="#000000" stroke-width="2.5"/>
+        <line x1="250" y1="76" x2="250" y2="90" stroke="#000000" stroke-width="2"/>
+        <text x="250" y="35" text-anchor="middle" fill="#000000" font-weight="bold" font-size="11">PAYLOAD (instrument)</text>
+        <line x1="250" y1="170" x2="250" y2="210" stroke="#000000" stroke-width="2"/>
+        <path d="M235,210 L250,225 L265,210 Z" fill="#000000"/>
+        <text x="250" y="245" text-anchor="middle" fill="#000000" font-size="11">antenna (down to ground)</text>
+        <text x="25" y="185" text-anchor="middle" fill="#4B4B4B" font-size="10">solar array</text>
+        <text x="475" y="185" text-anchor="middle" fill="#4B4B4B" font-size="10">solar array</text>
+      </svg>
+    </div>
+
+    <h2 class="sec">The bus: the spacecraft's "body"</h2>
+    <p>The <b>bus</b> is everything that keeps the spacecraft alive and functioning, regardless of its mission —
+    the same basic bus design can carry a camera, a radio, or a science instrument. It typically includes:</p>
+    <div class="grid2">
+      <div class="term">🏗️ <b>Structure</b> — the physical frame holding everything together and surviving launch.</div>
+      <div class="term">🔋 <b>Power system</b> — solar arrays + batteries (see Power Budget).</div>
+      <div class="term">🧠 <b>Avionics/computer</b> — onboard "brain" running software and handling commands.</div>
+      <div class="term">📡 <b>Communications</b> — antennas for talking to ground stations (see Module 4).</div>
+      <div class="term">🚀 <b>Propulsion</b> (optional) — thrusters for orbit adjustments, like counteracting drag.</div>
+      <div class="term">🎯 <b>Attitude control</b> — keeps the spacecraft correctly oriented (e.g. solar panels facing the sun, instrument facing the target).</div>
+    </div>
+
+    <h2 class="sec">The payload: the reason the mission exists</h2>
+    <p>The <b>payload</b> is the mission-specific hardware — the actual instrument or equipment that accomplishes
+    the mission's goal. Everything else on the spacecraft exists to support the payload. The next page covers
+    common payload types and how a mission chooses between different manufacturers ("vendors") to build one.</p>
+
+    <div class="callout"><b>Analogy:</b> think of the bus like a delivery truck, and the payload like the cargo.
+    The truck (bus) provides power, navigation, and structure — but the entire trip only matters because of what's
+    in the back.</div>
+  </section>
+  <section class="page" id="m3-payload">
+    <div class="eyebrow">Module 3 · Spacecraft & Payload</div>
+    <h1 class="title">Payload Types & Vendors</h1>
+    <p class="subtitle">What the satellite actually does, and who builds it.</p>
+
+    <h2 class="sec">Common payload categories</h2>
+    <div class="grid2">
+      <div class="term">📷 <b>Optical imaging</b> — cameras that photograph the Earth's surface (agriculture,
+      mapping, disaster monitoring). Blocked by clouds (see Module 2).</div>
+      <div class="term">📡 <b>Radar (SAR)</b> — active sensors that bounce radio waves off the ground; work day or
+      night and through clouds.</div>
+      <div class="term">📶 <b>Communications</b> — relays that receive and re-transmit signals (TV, internet,
+      phone service) between ground locations.</div>
+      <div class="term">🧪 <b>Science instruments</b> — specialized sensors for research (magnetometers,
+      spectrometers, particle detectors, etc.).</div>
+    </div>
+
+    <div class="callout"><b>Why payload choice drives everything else:</b> the payload's power draw, mass, pointing
+    accuracy needs, and data output all cascade into the mass budget, power budget, and requirements covered next
+    — the payload is usually the starting point the rest of the spacecraft is designed around.</div>
+
+    <h2 class="sec">Vendors: who builds it?</h2>
+    <p>A <b>vendor</b> is the company or manufacturer supplying a piece of hardware — a specific camera model, a
+    specific propulsion system, or an entire spacecraft bus. Real-world vendors range from large aerospace primes
+    to specialized small-satellite component suppliers.</p>
+    <p>Comparing vendors early in mission design matters because different vendors offer different trade-offs:</p>
+    <table>
+      <tr><th>Trade-off</th><th>What it affects</th></tr>
+      <tr><td>Cost</td><td>Total mission budget</td></tr>
+      <tr><td>Mass & power draw</td><td>Feeds directly into the mass and power budgets</td></tr>
+      <tr><td>Heritage / flight history</td><td>Risk — a component "flown before" is generally lower-risk than a brand-new design</td></tr>
+      <tr><td>Lead time</td><td>How long until the hardware is ready, affecting the mission schedule</td></tr>
+    </table>
+    <p>By letting a mission swap between vendor options, Continuum makes it possible to compare "what if we used
+    Vendor A's camera vs. Vendor B's camera" without redoing the entire mission design from scratch.</p>
+  </section>
+  <section class="page" id="m3-requirements">
+    <div class="eyebrow">Module 3 · Spacecraft & Payload</div>
+    <h1 class="title">Requirements: Defining "Success" Before You Build Anything</h1>
+    <p class="subtitle">A requirement is a measurable rule the finished mission must satisfy — the yardstick every design decision gets checked against.</p>
+
+    <p>Before designing hardware, mission teams write down specific, testable statements about what the mission
+    must accomplish. Good requirements are measurable — not "take good pictures," but something like "achieve
+    ground resolution of 5 meters or better."</p>
+
+    <div class="grid2">
+      <div class="term">✅ <b>Good requirement:</b> "The spacecraft shall maintain communication with a ground
+      station at least once every 12 hours." — specific, testable, unambiguous.</div>
+      <div class="term">❌ <b>Weak requirement:</b> "The spacecraft should communicate frequently." — vague, can't
+      be verified by a simulation or a test.</div>
+    </div>
+
+    <h3 class="sub">Why Continuum tracks requirements alongside the design</h3>
+    <p>Every simulation result in Module 5 — trajectories, budgets, sizing outputs — exists to answer one question:
+    <b>does this design satisfy its requirements?</b> Requirements are the reference point that turns raw simulation
+    numbers ("the battery holds 40 Wh") into a verdict ("...which is enough / not enough to survive the eclipse").</p>
+
+    <div class="callout"><b>Analogy:</b> requirements are like a grading rubric handed out before an exam. Without
+    it, you can still take the exam (run the simulation) — but you have no way to know if you passed.</div>
+  </section>
+  <section class="page" id="m3-mass">
+    <div class="eyebrow">Module 3 · Spacecraft & Payload</div>
+    <h1 class="title">Mass Budget</h1>
+    <p class="subtitle">A spreadsheet-style accounting of exactly how many kilograms every part of the spacecraft weighs — and why every gram is fought over.</p>
+
+    <p>A rocket can only lift a fixed amount of mass to a given orbit. The <b>mass budget</b> lists every
+    subsystem's weight, sums them up, and compares the total against that hard limit — with margin set aside for
+    the inevitable surprises during design.</p>
+
+    <div class="chartbox">
+      <canvas id="chart-mass" height="230"></canvas>
+    </div>
+
+    <table>
+      <tr><th>Subsystem</th><th>Typical share of mass</th></tr>
+      <tr><td>Structure</td><td>Frame and mechanical housing</td></tr>
+      <tr><td>Power (batteries + solar arrays)</td><td>Often one of the heaviest subsystems</td></tr>
+      <tr><td>Propulsion (fuel + thrusters)</td><td>Only present if the mission needs maneuvering</td></tr>
+      <tr><td>Payload</td><td>The instrument itself</td></tr>
+      <tr><td>Margin</td><td>Deliberate reserve for design changes and uncertainty</td></tr>
+    </table>
+
+    <div class="callout"><b>Why "margin" is its own line item:</b> early in a mission, almost every subsystem's
+    mass estimate is optimistic. Engineers intentionally reserve extra mass (often 20–30%) as a buffer, so that
+    normal design refinement doesn't blow past the rocket's lift capacity later on.</div>
+  </section>
+  <section class="page" id="m3-power">
+    <div class="eyebrow">Module 3 · Spacecraft & Payload</div>
+    <h1 class="title">Power Budget</h1>
+    <p class="subtitle">Every electrical device on the spacecraft draws power — and for roughly a third of every orbit, there's no sunlight to make more of it (see Eclipses).</p>
+
+    <figure>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1c/Solar_array_being_installed_on_ISS.jpg/1024px-Solar_array_being_installed_on_ISS.jpg"
+           onerror="imgFallback(this,'Solar arrays being installed on a spacecraft (NASA/Wikimedia Commons)')" alt="Solar array installation">
+      <figcaption>Solar arrays generate power in sunlight; batteries store it for use during eclipses and peak demand.</figcaption>
+    </figure>
+
+    <div class="grid2">
+      <div class="chartbox">
+        <canvas id="chart-power-gen" height="200"></canvas>
+        <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px;">Power generated over one orbit — zero during eclipse.</p>
+      </div>
+      <div class="chartbox">
+        <canvas id="chart-power-use" height="200"></canvas>
+        <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:6px;">Example split of where consumed power goes.</p>
+      </div>
+    </div>
+
+    <p>The power budget balances two sides of a ledger: <b>generation</b> (solar arrays, sized by area and
+    efficiency) against <b>consumption</b> (every subsystem and the payload, added together, including instruments
+    that only run part of the time). Batteries bridge the gap during eclipse — they must be large enough to power
+    essential systems through the longest expected shadow period without fully draining.</p>
+
+    <div class="callout"><b>Why this budget is so tight:</b> unlike mass (which is fixed once launched), power is
+    a <i>continuous</i> requirement — the spacecraft must never run out, every single orbit, for its entire
+    lifetime. A power budget that "just barely" balances on paper often fails once real-world losses (aging
+    batteries, degraded solar cells, sensor pointing errors) are considered — which is why engineers build in
+    margin here too.</div>
+  </section>
+  <section class="page" id="m3-forces">
+    <div class="eyebrow">Module 3 · Spacecraft & Payload</div>
+    <h1 class="title">Mission Settings & Additional Force Models</h1>
+    <p class="subtitle">Beyond gravity and drag, a handful of smaller forces can matter for specific missions.</p>
+
+    <p>Mission settings configure how the simulation should run — how long to simulate, how finely to step through
+    time, and which of the forces below to include. Not every mission needs every force modeled; including more
+    forces increases realism but also computation time, so teams turn on only what's relevant to their mission's
+    precision needs.</p>
+
+    <div class="grid2">
+      <div class="term">☀️ <b>Solar radiation pressure</b> — sunlight itself carries a tiny amount of momentum;
+      over months or years this can noticeably nudge a spacecraft's orbit, especially for missions needing
+      pinpoint accuracy.</div>
+      <div class="term">🌊 <b>Third-body gravity</b> — the Sun and Moon's gravity also tug on a spacecraft, not
+      just the central body's — usually a small effect, but not always negligible.</div>
+      <div class="term">🧲 <b>Magnetic/other perturbations</b> — additional minor forces sometimes modeled for very
+      precise or long-duration missions.</div>
+      <div class="term">⏱️ <b>Simulation settings</b> — things like total mission duration and time-step size,
+      which trade off accuracy against how long the simulation takes to run.</div>
+    </div>
+
+    <div class="callout"><b>Why it's presented as a checklist:</b> think of these like optional camera filters —
+    each one adds a layer of realism (and processing time). A quick early-design check might use only gravity and
+    drag; a final pre-launch verification might switch on everything.</div>
+  </section>
+  <section class="page" id="m4-targets">
+    <div class="eyebrow">Module 4 · Targets & Ground Assets</div>
+    <h1 class="title">Discrete vs Regional Targets</h1>
+    <p class="subtitle">A mission's "target" is simply what part of the Earth it cares about — and there are two fundamentally different ways to define one.</p>
+
+    <div class="grid2">
+      <div class="card tight">
+        <svg viewBox="0 0 200 130" width="100%"><rect width="200" height="130" fill="#FFF9CC" stroke="#000000" rx="4"/>
+          <path d="M20,90 Q60,60 100,80 Q140,50 180,70" stroke="#9B9B9B" stroke-width="1.5" fill="none"/>
+          <circle cx="55" cy="45" r="5" fill="#FFE600" stroke="#000000"/><circle cx="120" cy="95" r="5" fill="#FFE600" stroke="#000000"/><circle cx="160" cy="35" r="5" fill="#FFE600" stroke="#000000"/>
+        </svg>
+        <h4 style="margin:10px 0 4px;color:#000000">🎯 Discrete Targets</h4>
+        <p style="font-size:13px;margin:0;">A specific list of individual points — exact latitude/longitude
+        locations, added one row at a time (a city, an airport, a single facility).</p>
+      </div>
+      <div class="card tight">
+        <svg viewBox="0 0 200 130" width="100%"><rect width="200" height="130" fill="#FFF9CC" stroke="#000000" rx="4"/>
+          <path d="M20,90 Q60,60 100,80 Q140,50 180,70" stroke="#9B9B9B" stroke-width="1.5" fill="none"/>
+          <rect x="40" y="30" width="90" height="55" fill="rgba(255,230,0,.28)" stroke="#000000" stroke-width="1.5"/>
+        </svg>
+        <h4 style="margin:10px 0 4px;color:#000000">🗺️ Regional Targets</h4>
+        <p style="font-size:13px;margin:0;">An entire area — a custom-drawn shape, a whole country, or a whole
+        continent — rather than a single point.</p>
+      </div>
+    </div>
+
+    <table>
+      <tr><th>Target type</th><th>Sub-options</th><th>Good for</th></tr>
+      <tr><td>Discrete</td><td>Add individual rows (one point each)</td><td>Point-to-point comms, imaging specific facilities/cities</td></tr>
+      <tr><td>Regional</td><td>Custom shape · World · Predefined regions</td><td>Broad-area monitoring — agriculture, weather, disaster coverage across a whole zone</td></tr>
+    </table>
+
+    <div class="callout"><b>Why the distinction matters:</b> a discrete target asks "does the satellite pass
+    directly over this exact point?" — a much stricter, less frequent event than a regional target's question,
+    "does the satellite pass over <i>any part</i> of this large area?" This directly affects how often a
+    requirement like "revisit this target daily" is realistically achievable.</div>
+  </section>
+  <section class="page" id="m4-resolution">
+    <div class="eyebrow">Module 4 · Targets & Ground Assets</div>
+    <h1 class="title">Resolution: How Finely to Grid a Region</h1>
+    <p class="subtitle">A regional target isn't analyzed as one giant blob — it's broken into a grid of small cells, and "resolution" controls how fine that grid is.</p>
+
+    <div class="grid2">
+      <div class="card tight" style="text-align:center;">
+        <svg viewBox="0 0 160 120" width="140" height="105">
+          <rect width="160" height="120" fill="#FFF9CC" stroke="#000000"/>
+          <g stroke="#4B4B4B" stroke-width="1">
+            <line x1="53" y1="0" x2="53" y2="120"/><line x1="107" y1="0" x2="107" y2="120"/>
+            <line x1="0" y1="40" x2="160" y2="40"/><line x1="0" y1="80" x2="160" y2="80"/>
+          </g>
+        </svg>
+        <h4 style="margin:8px 0 4px;color:#000000">Coarse resolution</h4>
+        <p style="font-size:12.5px;margin:0;">Few, large grid cells — fast to compute, but low geographic detail.</p>
+      </div>
+      <div class="card tight" style="text-align:center;">
+        <svg viewBox="0 0 160 120" width="140" height="105">
+          <rect width="160" height="120" fill="#FFF9CC" stroke="#000000"/>
+          <!-- kept dark (not module yellow): a fine grid rendered in yellow would be nearly invisible
+               on white (yellow measures ~1.3:1 contrast) and the whole point here is to show density -->
+          <g stroke="#000000" stroke-width="0.6" opacity="0.55">
+            <line x1="20" y1="0" x2="20" y2="120"/><line x1="40" y1="0" x2="40" y2="120"/><line x1="60" y1="0" x2="60" y2="120"/><line x1="80" y1="0" x2="80" y2="120"/><line x1="100" y1="0" x2="100" y2="120"/><line x1="120" y1="0" x2="120" y2="120"/><line x1="140" y1="0" x2="140" y2="120"/>
+            <line x1="0" y1="15" x2="160" y2="15"/><line x1="0" y1="30" x2="160" y2="30"/><line x1="0" y1="45" x2="160" y2="45"/><line x1="0" y1="60" x2="160" y2="60"/><line x1="0" y1="75" x2="160" y2="75"/><line x1="0" y1="90" x2="160" y2="90"/><line x1="0" y1="105" x2="160" y2="105"/>
+          </g>
+        </svg>
+        <h4 style="margin:8px 0 4px;color:#000000">Fine resolution</h4>
+        <p style="font-size:12.5px;margin:0;">Many small grid cells — much more precise, but heavier to simulate.</p>
+      </div>
+    </div>
+
+    <p><b>Longitude resolution</b> and <b>latitude resolution</b> set the width and height of each grid cell,
+    typically in degrees (e.g. 1° × 1°). Every cell is then evaluated separately when the simulation checks
+    coverage — so a finer grid gives a much more accurate picture of exactly which parts of a region get seen,
+    at the cost of many more calculations.</p>
+
+    <div class="callout"><b>Analogy:</b> it's exactly like image resolution on a screen. A coarse grid is a
+    low-resolution photo — you get the general shape but miss detail. A fine grid is a high-resolution photo —
+    sharp detail, but a bigger file to process.</div>
+
+    <p>Regions themselves can be defined as a <b>custom</b> hand-drawn shape, the entire <b>world</b>, or one of
+    several <b>predefined regions</b> (continents, countries, or standard geographic zones) — giving flexibility
+    between quick global estimates and precise, custom-shaped areas of interest.</p>
+  </section>
+  <section class="page" id="m4-ground">
+    <div class="eyebrow">Module 4 · Targets & Ground Assets</div>
+    <h1 class="title">Ground Stations & Ground Assets</h1>
+    <p class="subtitle">A satellite is useless if it can never talk to anyone on the ground — ground assets are the "phone lines" of a mission.</p>
+
+    <figure>
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Goldstone_Deep_Space_Communications_Complex.jpg/1024px-Goldstone_Deep_Space_Communications_Complex.jpg"
+           onerror="imgFallback(this,'A large dish antenna ground station used to communicate with spacecraft (NASA/Wikimedia Commons)')" alt="A ground station antenna dish">
+      <figcaption>A ground station: a large antenna dish that uplinks commands to a spacecraft and downlinks its data back to Earth.</figcaption>
+    </figure>
+
+    <p>A <b>ground asset</b> (most commonly a ground station) is a fixed location on Earth with an antenna capable
+    of communicating with the spacecraft — sending commands up, and receiving data down. Just like targets, ground
+    assets are defined by their location, and the simulation calculates exactly when the spacecraft is in view of
+    each one.</p>
+
+    <div class="grid2">
+      <div class="term">⬆️ <b>Uplink</b> — commands and instructions sent from the ground station to the spacecraft.</div>
+      <div class="term">⬇️ <b>Downlink</b> — collected data (images, measurements) sent from the spacecraft back down to the ground station.</div>
+    </div>
+
+    <p>Because a spacecraft is only in range of a given ground station for a limited window each orbit, mission
+    designers often need <i>multiple</i> ground stations spread around the globe to guarantee frequent enough
+    contact — the same "line of sight" logic used for imaging targets in the previous pages applies here too, just
+    for two-way communication instead of one-way observation.</p>
+
+    <div class="callout"><b>Why it matters:</b> even a perfectly designed orbit and spacecraft are worthless if
+    there's no reliable way to get the collected data back to Earth. Ground asset planning is often just as
+    critical to mission success as the orbit or the payload itself.</div>
+  </section>
+  <section class="page" id="m5-trajectories">
+    <div class="eyebrow">Module 5 · Reading Simulation Results</div>
+    <h1 class="title">Trajectory & Orbital Element Plots</h1>
+    <p class="subtitle">Once a mission is run, the simulation hands back exactly where the spacecraft went — and the numbers behind that path.</p>
+
+    <p><b>Spacecraft trajectory</b> results are the raw output of the simulation: the spacecraft's exact position
+    over time. These are typically shown in one of two standard reference frames:</p>
+    <div class="grid2">
+      <div class="term"><b>J2000</b> — a fixed, non-rotating frame pinned to the stars, useful for comparing
+      orbits without Earth's rotation getting in the way.</div>
+      <div class="term"><b>IAU (body-fixed)</b> — a frame that rotates <i>with</i> the central body, useful for
+      seeing where the spacecraft is relative to actual geography (this is what produces ground tracks — see Module 2).</div>
+    </div>
+
+    <div class="chartbox">
+      <canvas id="chart-elements" height="230"></canvas>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px;">Example "orbital elements plot": altitude oscillating between perigee and apogee, orbit after orbit — a common way to visually confirm the orbit is stable and behaving as designed.</p>
+    </div>
+
+    <div class="callout"><b>Why plot elements instead of raw coordinates?</b> A raw (x, y, z) position over time is
+    hard to interpret at a glance. Plotting the orbital elements themselves (Module 2) — like altitude or
+    eccentricity over time — immediately reveals whether an orbit is stable, slowly decaying, or drifting in an
+    unexpected way.</div>
+  </section>
+  <section class="page" id="m5-timeline">
+    <div class="eyebrow">Module 5 · Reading Simulation Results</div>
+    <h1 class="title">Spacecraft Timeline</h1>
+    <p class="subtitle">A single chart answering "what is the spacecraft doing, and when?" across the whole mission.</p>
+
+    <div class="chartbox">
+      <canvas id="chart-timeline" height="200"></canvas>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px;">Example timeline: overlapping bars show when the spacecraft is in eclipse, in view of a target, and in view of a ground station — all on the same time axis.</p>
+    </div>
+
+    <p>The spacecraft timeline lays out every recurring event side-by-side on one shared clock: eclipse windows
+    (Module 2), target visibility windows (Module 4), and ground station contact windows (Module 4). Seeing them
+    together answers practical questions a single chart of any one event can't:</p>
+
+    <div class="grid2">
+      <div class="term">🔎 <b>Does a target pass ever overlap with a ground station pass?</b> If so, data could
+      potentially be downlinked immediately after collection.</div>
+      <div class="term">🔋 <b>Does the payload need to operate during eclipse?</b> If a target window falls during
+      a power-scarce eclipse period, that's a conflict worth catching early.</div>
+    </div>
+
+    <div class="callout"><b>Why it matters:</b> individually, an eclipse chart, a target-visibility chart, and a
+    ground-station chart each look fine in isolation. It's only by lining them up on the same timeline that
+    scheduling conflicts and opportunities become visible — this is often how mission designers catch problems
+    before they become costly surprises.</div>
+  </section>
+  <section class="page" id="m5-budgets">
+    <div class="eyebrow">Module 5 · Reading Simulation Results</div>
+    <h1 class="title">Mass & Power Budget Outputs</h1>
+    <p class="subtitle">This is where the budgets from Module 3 come back — not as plans, but as verified (or failed) results.</p>
+
+    <p>Module 3 introduced mass and power budgets as design <i>plans</i> — estimates made before running anything.
+    The results here are the simulation's verdict on those plans: did the actual, simulated behavior confirm the
+    spacecraft has enough mass margin and enough power to survive its worst-case orbit conditions?</p>
+
+    <div class="chartbox">
+      <canvas id="chart-budget-outcome" height="220"></canvas>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:8px;">Example comparison: planned budget vs. simulated worst-case need, for mass and power. A margin that turns negative means the design doesn't yet close.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="term">✅ <b>Budget closes:</b> the design has enough margin — mass is under the launch limit,
+      power generation exceeds worst-case demand even through the longest eclipse.</div>
+      <div class="term">⚠️ <b>Budget doesn't close:</b> the simulation reveals a shortfall — time to reduce
+      payload mass, add solar array area, change the orbit, or revisit the vendor selection (Module 3).</div>
+    </div>
+
+    <div class="callout"><b>Why this loop matters:</b> mission design is rarely a straight line. A failed budget
+    output often sends the team back to Module 3 (spacecraft), Module 2 (orbit), or Module 4 (targets) to adjust
+    the design, then re-run the mission — repeating until every budget closes with acceptable margin.</div>
+  </section>
+  <section class="page" id="m5-sizing">
+    <div class="eyebrow">Module 5 · Reading Simulation Results</div>
+    <h1 class="title">Sizing Outputs</h1>
+    <p class="subtitle">The final "spec sheet" — the concrete numbers a real hardware team would need to actually build the spacecraft.</p>
+
+    <p><b>Sizing outputs</b> translate all the earlier analysis (orbit, budgets, requirements) into concrete
+    hardware specifications: how big does each component actually need to be? This is often the last stop before a
+    mission design is considered "closed" and ready for more detailed engineering.</p>
+
+    <table>
+      <tr><th>Sizing output</th><th>Answers</th></tr>
+      <tr><td>Solar array area</td><td>How many square meters of solar cells are needed to meet the power budget?</td></tr>
+      <tr><td>Battery capacity</td><td>How many watt-hours of storage are needed to survive the longest eclipse?</td></tr>
+      <tr><td>Propellant mass</td><td>How much fuel is needed for the mission's planned lifetime, including drag makeup?</td></tr>
+      <tr><td>Antenna size</td><td>How large must the antenna be to close the communication link at the required data rate?</td></tr>
+    </table>
+
+    <div class="callout"><b>Why sizing outputs are the natural end point:</b> everything in this portal — orbits,
+    gravity models, targets, budgets — ultimately exists to answer one practical question: <i>exactly what
+    hardware does this mission need?</i> Sizing outputs are that answer, expressed in units a manufacturer can
+    actually build to.</div>
+
+    <div class="callout q"><b>You've now covered the whole loop:</b> Mission Basics → Orbit → Spacecraft/Payload →
+    Targets/Ground Assets → Results. See the next page for one diagram tying it all together.</div>
+  </section>
+  <section class="page" id="m6-overview">
+    <div class="eyebrow">Module 6 · Stakeholder Deep Dive</div>
+    <h1 class="title">Meet the Real Stakeholders</h1>
+    <p class="subtitle">Reference → "Use Cases, Stakeholders &amp; Phases" gave you the five-minute version. This
+    module is the deep dive: who these five people actually are, what their day-to-day looks like, what they're
+    probably already using before they ever open Mission Planner, and exactly which use case is built for them.</p>
+
+    <div class="callout q"><b>How to read this module:</b> every page follows the same shape — their world,
+    what they're likely already working with, how they relate to the other four stakeholders, their best-fit use
+    case and why, and what breaks if we get it wrong. Content pulled directly from the stakeholder map is marked
+    <span class="tag-confirmed">✓ confirmed in a real deal</span> or simply stated as fact. Anything we're
+    reasoning our way into — like "what tool are they probably using today" — is always marked
+    <span class="tag-inferred">◌ reasoned guess</span>, because the source documents don't actually say.</div>
+
+    <h2 class="sec">All five, at a glance</h2>
+    <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Persona</th><th>Decides</th><th>Likely using today</th><th>Best-fit use case</th><th>Single biggest need</th></tr>
+      <tr><td><b>Business Manager</b></td><td>Is it worth the money?</td><td>Budget/CapEx-OpEx spreadsheets<span class="tag-inferred" style="margin-left:4px;">◌</span></td><td>Budget/Risk framing</td><td>A case they can forward without a meeting</td></tr>
+      <tr><td><b>Technical Expert</b></td><td>Are the numbers real?</td><td>Orbital/compute analysis tools<span class="tag-inferred" style="margin-left:4px;">◌</span></td><td>Budget/Risk framing (rigor side)</td><td>Source-cited, substitutable models</td></tr>
+      <tr><td><b>Procurement Officer</b></td><td>Does this survive an audit?</td><td>DoDAF/JCIDS, Source Selection process</td><td>Hypersonic/SDA Modeling · SDA Sensor Fusion</td><td>Institutional legitimacy + contract terms</td></tr>
+      <tr><td><b>DC Operator</b></td><td>Is renting cheaper than building?</td><td>DCIM/fleet capacity tools<span class="tag-inferred" style="margin-left:4px;">◌</span></td><td>AI inference burst + backup/DR</td><td>A kW-to-BLADE conversion they trust</td></tr>
+      <tr><td><b>Press &amp; Influencer</b></td><td>Is this worth sharing?</td><td>CMS/social/newsletter tools<span class="tag-inferred" style="margin-left:4px;">◌</span></td><td>Synthetic Weather Forecast</td><td>Zero friction, zero gate</td></tr>
+    </table>
+    </div>
+    <p style="font-size:12.5px;color:var(--muted);">DoDAF/JCIDS and the Source Selection process are the only
+    "currently used" items named directly in the stakeholder map — everything else marked
+    <span class="tag-inferred">◌</span> is a plausible, non-documented inference. Worth validating with the client
+    directly.</p>
+
+    <h2 class="sec">Go deeper on each one</h2>
+    <div class="grid3">
+      <div class="modcard mc-core" onclick="showPage('m6-bm')"><div class="num">Persona 1</div><h4>💼 Business Manager</h4><p>Owns the purchase decision. Needs a case they can forward, not defend live.</p></div>
+      <div class="modcard mc-orbit" onclick="showPage('m6-te')"><div class="num">Persona 2</div><h4>🔬 Technical Expert</h4><p>No purchase authority, but no deal closes without their signature.</p></div>
+      <div class="modcard mc-space" onclick="showPage('m6-po')"><div class="num">Persona 3</div><h4>🏛️ Procurement Officer</h4><p>Independent government track. Called the highest-value audience overall.</p></div>
+      <div class="modcard mc-target" onclick="showPage('m6-dc')"><div class="num">Persona 4</div><h4>🖥️ DC Operator</h4><p>Not building a space mission — just comparing costs to their own fleet.</p></div>
+      <div class="modcard mc-core" onclick="showPage('m6-pi')"><div class="num">Persona 5</div><h4>📣 Press &amp; Influencer</h4><p>Outside every deal. Seeds Awareness with one shareable stat.</p></div>
+      <div class="modcard mc-core" onclick="showPage('m6-compare')"><div class="num">Synthesis</div><h4>🔀 Side-by-Side</h4><p>All five personas compared, plus a quick "who's talking to us" guide.</p></div>
+    </div>
+  </section>
+
+  <section class="page" id="m6-bm">
+    <div class="eyebrow chip p-bm">Module 6 · Stakeholder Deep Dive</div>
+    <h1 class="title">Business Manager: The Budget Owner</h1>
+    <p class="subtitle">Owns the purchase decision for the space-industry track. Not deeply technical themselves —
+    their job is translating someone else's engineering into a number a budget can approve.</p>
+
+    <h2 class="sec">Their world</h2>
+    <p>The Business Manager works at a space-industry company building out a real program (the documented real
+    example: Thales's IMAGIN-e program). They're evaluating whether Sophia's orbital compute is worth the money for
+    <i>that specific program</i> — not shopping in the abstract. They sit in the middle of an internal chain: they
+    need to convince people above them, using numbers handed to them from below.</p>
+
+    <h3 class="sub">Likely already working with <span class="tag-inferred">◌ reasoned guess</span></h3>
+    <div class="grid2">
+      <div class="term">📊 <b>Budget/CapEx-OpEx models</b> — standard corporate financial planning spreadsheets and business-case templates, used well before Sophia enters the picture.</div>
+      <div class="term">📋 <b>Program risk registers</b> — whatever internal system tracks program-level risk, since "program risk" is explicitly part of the case they need to build.</div>
+    </div>
+    <p style="font-size:12.5px;color:var(--muted);">Not documented in the source material — inferred from the fact that they think in "CapEx vs. OpEx" and "program risk," which are standard corporate finance concepts, not space-engineering ones.</p>
+
+    <h2 class="sec">Relationship to other stakeholders</h2>
+    <div class="grid2">
+      <div class="term">➡️ <b>Forwards claims to their Technical Expert</b> — the documented default pattern: BM configures, then hands off technical claims for validation.</div>
+      <div class="term">🔁 <b>Sometimes it's one joint call, not a handoff</b> <span class="tag-confirmed">✓ confirmed in a real deal</span> — Julian (BM, owns IMAGIN-e) and Alejandro (their Technical Expert) were on the same call making a joint decision.</div>
+    </div>
+
+    <h2 class="sec">Best-fit use case: Budget/Risk framing vs. technical validation</h2>
+    <p>The same underlying configuration gets read two completely different ways. The Business Manager needs the
+    <b>budget/risk framing</b> half — dollar terms, CapEx/OpEx, program risk — because that's the only language
+    that lets them "hand it upward without a meeting."</p>
+
+    <div class="callout"><b>Ideal outcome:</b> a Trade Study PDF credible enough to socialize internally and convert
+    into a signed deal — not a technical document they'd have to translate themselves.</div>
+
+    <h2 class="sec">What goes wrong if we get it wrong</h2>
+    <p>A configuration that's technically excellent but doesn't translate into a defensible dollar figure is
+    useless to this persona — they can't act on engineering rigor they can't put in front of a budget committee.</p>
+    <div class="deal-note"><b>✓ confirmed in a real deal:</b> trust survives an <i>honest, corrected</i> pricing
+    mistake — the correction itself became a trust-building moment, not a deal-breaker. Getting a number wrong isn't
+    fatal; hiding it would be.</div>
+  </section>
+
+  <section class="page" id="m6-te">
+    <div class="eyebrow chip p-te">Module 6 · Stakeholder Deep Dive</div>
+    <h1 class="title">Technical Expert: The Sign-Off</h1>
+    <p class="subtitle">No purchase authority at all — but the only persona explicitly paired with another, because
+    no deal closes without their signature on the technical annex.</p>
+
+    <h2 class="sec">Their world</h2>
+    <p>The Technical Expert's entire job is to make sure their company doesn't sign a contract based on false
+    numbers. They work directly with the Business Manager, auditing every technical claim and re-running the
+    BLADE/latency numbers against whatever scenario the Business Manager has chosen.</p>
+    <div class="deal-note"><b>✓ confirmed in a real deal:</b> this role isn't always in-house staff — it can be an
+    external contracted validator, like a research partner the buyer brings in specifically to check the numbers.</div>
+
+    <h3 class="sub">Likely already working with <span class="tag-inferred">◌ reasoned guess</span></h3>
+    <div class="grid2">
+      <div class="term">🛰️ <b>Orbital/compute analysis tools</b> — the source material mentions "their own measured
+      TOPS" and "their own ground-contact schedule," implying they already run some form of orbital-mechanics or
+      chip-benchmarking toolchain before Mission Planner ever enters the picture.</div>
+      <div class="term">📎 <b>Vendor data sheets</b> — cross-checking stats against data sheets is documented
+      directly; that implies a habit of keeping/comparing spec sheets from multiple hardware vendors.</div>
+    </div>
+    <p>This is exactly why Modules 2 and 3 of this portal exist: gravity models, drag, mass and power budgets are
+    the Technical Expert's native language. A Business Manager reads a Trade Study PDF; a Technical Expert reads
+    the assumptions behind it.</p>
+
+    <h2 class="sec">Relationship to other stakeholders</h2>
+    <p>Paired tightly with the Business Manager — receives forwarded claims, must validate and sign before the deal
+    can close. Not connected to Procurement Officer, DC Operator, or Press &amp; Influencer at all.</p>
+
+    <h2 class="sec">Best-fit use case: Budget/Risk framing vs. technical validation</h2>
+    <p>Same configuration as the Business Manager's use case, opposite half: the Technical Expert needs the
+    <b>technical validation</b> side — source-cited, substitutable models they can independently re-derive, not
+    just a number to trust.</p>
+
+    <h2 class="sec">What goes wrong if we get it wrong</h2>
+    <p>If a claim isn't source-cited or the underlying model isn't substitutable with the Technical Expert's own
+    numbers, they can't sign — and the deal simply stalls at exactly the step it can't survive.</p>
+    <div class="callout"><b>Ideal outcome:</b> they sign off confident every figure is defensible, and start
+    Onboarding (Phase III) already fluent in the toolchain instead of learning it from scratch.</div>
+  </section>
+
+  <section class="page" id="m6-po">
+    <div class="eyebrow chip p-po">Module 6 · Stakeholder Deep Dive</div>
+    <h1 class="title">Procurement Officer: The Independent Auditor</h1>
+    <p class="subtitle">A government buyer running a completely separate evaluation track — explicitly called the
+    "highest-value" audience in the source documentation.</p>
+
+    <h2 class="sec">Their world</h2>
+    <p>The Procurement Officer wants Sophia's onboard AI computer to fly on satellites for a military mission —
+    detecting missile launches or tracking objects in space for national security. Unlike the Business Manager,
+    they don't have flexibility on process: strict government rules apply, and every document has to survive an
+    audit, not just convince a person.</p>
+
+    <h3 class="sub">Confirmed already in use</h3>
+    <div class="grid2">
+      <div class="term">🏛️ <b>DoD Architecture Framework (DoDAF) &amp; JCIDS</b> — named directly in the source
+      material as the institutional-legitimacy frameworks this persona expects to see referenced.</div>
+      <div class="term">📄 <b>Source Selection / pre-RFP process</b> — the ideal outcome is explicitly a document
+      "attachable to a pre-RFP technical assessment," meaning they're already operating inside a formal federal
+      acquisition process.</div>
+    </div>
+
+    <h2 class="sec">Relationship to other stakeholders</h2>
+    <p>Fully independent track — no documented handoff to or from the Business Manager, Technical Expert, DC
+    Operator, or Press &amp; Influencer. Their evaluation stands alone.</p>
+
+    <h2 class="sec">Best-fit use cases: Hypersonic/SDA Modeling &amp; SDA Sensor Fusion</h2>
+    <p>Both are defense scenarios modeled independently at constellation scale, built to read as <b>neutral
+    engineering reports</b> — not sales collateral. That distinction is the whole point for this persona.</p>
+
+    <div class="callout"><b>What they need, concretely</b> <span class="tag-confirmed">✓ confirmed in a real deal</span>:
+    institutional-legitimacy cues (JPL/Microsoft pedigree) and survivable rigor, plus — before signing — a refund
+    policy, a 90-day minimum commitment structure, clear IP/distribution rights, and a data-isolation guarantee.</div>
+
+    <h2 class="sec">What goes wrong if we get it wrong</h2>
+    <p>A document that reads as polished sales material instead of a neutral engineering report won't survive their
+    stress test — and one that can't attach to a pre-RFP assessment without rework defeats the entire point of using
+    Mission Planner here.</p>
+    <div class="deal-note"><b>✓ confirmed in a real deal — cross-cutting risk:</b> the data-isolation gap (no
+    hypervisor between co-tenants) is a client-admitted risk that touches this persona directly, alongside the
+    Business Manager and Technical Expert tracks.</div>
+  </section>
+
+  <section class="page" id="m6-dc">
+    <div class="eyebrow chip p-dc">Module 6 · Stakeholder Deep Dive</div>
+    <h1 class="title">DC Operator: The Capacity Planner</h1>
+    <p class="subtitle">Not building a space mission at all — just asking whether renting a bit of orbital compute
+    beats building another terrestrial data center.</p>
+
+    <h2 class="sec">Their world</h2>
+    <p>The DC Operator already runs large terrestrial data centers. Sophia isn't a space product to them — it's a
+    capacity and cost question, evaluated the same way they'd evaluate any other fleet expansion decision. They
+    model orbital capacity as a <b>federated, burstable extension</b> of infrastructure they already operate.</p>
+
+    <h3 class="sub">Likely already working with <span class="tag-inferred">◌ reasoned guess</span></h3>
+    <div class="grid2">
+      <div class="term">🗄️ <b>DCIM / fleet capacity tools</b> — data center infrastructure management systems, to
+      track utilization across their existing terrestrial fleet.</div>
+      <div class="term">🌱 <b>Sustainability financing frameworks</b> — the ideal outcome explicitly mentions a
+      "sustainability-linked financing decision," implying they already operate inside an ESG/financing process.</div>
+    </div>
+
+    <h2 class="sec">Relationship to other stakeholders</h2>
+    <p>Fully independent track, same as Procurement Officer — no routing through the Business Manager or Technical
+    Expert. No new evidence from the Thales deal touches this persona yet.</p>
+
+    <h2 class="sec">Best-fit use case: Non-hyperscale AI inference burst + backup/DR</h2>
+    <p>Sized to a 5–50kW tier and framed explicitly as a federated extension of an existing fleet — matching exactly
+    how this persona already thinks about capacity, in kilowatts, not orbital mechanics.</p>
+
+    <div class="callout"><b>What they need:</b> a concrete kW-to-BLADE conversion, an architectural answer to
+    maintenance risk (who fixes what, and how, once it's in orbit), and a sustainability-financing angle their board
+    will recognize.</div>
+
+    <h2 class="sec">What goes wrong if we get it wrong</h2>
+    <p>This persona's entire mental model is kilowatts, racks, and uptime. If Mission Planner can't translate
+    "BLADE" into their existing capacity language clearly and immediately, the pitch never lands — no matter how
+    good the underlying economics are.</p>
+    <div class="callout q"><b>Ideal outcome:</b> a board-ready Orbital Compute Audit that supports a
+    sustainability-linked financing decision — a document for their board, not for an engineer.</div>
+  </section>
+
+  <section class="page" id="m6-pi">
+    <div class="eyebrow chip p-pi">Module 6 · Stakeholder Deep Dive</div>
+    <h1 class="title">Press &amp; Influencer: Outside Every Deal</h1>
+    <p class="subtitle">Not a buyer at all. The only persona whose entire relationship to Mission Planner is a
+    single, frictionless interaction.</p>
+
+    <h2 class="sec">Their world</h2>
+    <p>Arrives cold — from a press release or a newsletter, not from a sales conversation. Isn't evaluating
+    anything or trying to justify a purchase to anyone. Wants exactly one cool fact or chart for an article or
+    post, and wants it immediately.</p>
+
+    <h3 class="sub">Likely already working with <span class="tag-inferred">◌ reasoned guess</span></h3>
+    <p>Whatever they use to publish — a CMS, a social platform, a newsletter tool — plus whatever press kit or
+    release brought them in. None of this is documented in the source material; it's a reasonable assumption based
+    on how this persona is described, not a cited fact.</p>
+
+    <h2 class="sec">Relationship to other stakeholders</h2>
+    <p>One-directional and outside the deal entirely: this persona <b>seeds Awareness</b> for the Business
+    Manager's track specifically, but nothing flows back to them. No handoff, no follow-up loop.</p>
+
+    <h2 class="sec">Best-fit use case: Synthetic Weather Forecast</h2>
+    <p>Delivered through <b>Quick Benchmark</b> — skipping the full configurator entirely to produce one shareable
+    chart in under 60 seconds.</p>
+
+    <h2 class="sec">What goes wrong if we get it wrong</h2>
+    <div class="callout"><b>The one rule that matters:</b> one compelling, ungated stat or visual, reusable
+    without an email or login gate. Any friction here — a signup wall, a slow load, a chart that isn't instantly
+    shareable — and this persona simply leaves. There's no second chance; they didn't come to evaluate anything.</div>
+  </section>
+
+  <section class="page" id="m6-compare">
+    <div class="eyebrow">Module 6 · Stakeholder Deep Dive</div>
+    <h1 class="title">Side-by-Side &amp; Use Case Fit</h1>
+    <p class="subtitle">All five personas compared directly, plus a quick way to guess who you're talking to.</p>
+
+    <h2 class="sec">Full comparison</h2>
+    <div style="overflow-x:auto;">
+    <table>
+      <tr><th>Persona</th><th>Purchase authority</th><th>Relationship pattern</th><th>Best-fit use case</th><th>Biggest risk if we get it wrong</th></tr>
+      <tr><td>Business Manager</td><td>Decides, with input</td><td>Forwards to / joint call with TE</td><td>Budget/Risk framing (budget side)</td><td>Not forward-able without a meeting</td></tr>
+      <tr><td>Technical Expert</td><td>None — but blocks the deal</td><td>Paired tightly with BM</td><td>Budget/Risk framing (rigor side)</td><td>Claims aren't source-cited/substitutable</td></tr>
+      <tr><td>Procurement Officer</td><td>Decides independently</td><td>Fully independent track</td><td>Hypersonic/SDA Modeling · SDA Sensor Fusion</td><td>Reads as sales material, not a neutral report</td></tr>
+      <tr><td>DC Operator</td><td>Decides independently</td><td>Fully independent track</td><td>AI inference burst + backup/DR</td><td>Can't map kW to BLADE clearly</td></tr>
+      <tr><td>Press &amp; Influencer</td><td>None — not a buyer</td><td>One-directional, seeds BM's Awareness</td><td>Synthetic Weather Forecast</td><td>Any gate or friction at all</td></tr>
+    </table>
+    </div>
+
+    <h2 class="sec">Quick "who am I talking to" guide</h2>
+    <div class="grid2">
+      <div class="term">💬 <i>"I need to justify this to my VP without a live meeting."</i> → <b>Business Manager</b></div>
+      <div class="term">💬 <i>"I just need to check these numbers are real before we sign."</i> → <b>Technical Expert</b></div>
+      <div class="term">💬 <i>"This needs to survive a government audit."</i> → <b>Procurement Officer</b></div>
+      <div class="term">💬 <i>"Would renting this be cheaper than building more capacity?"</i> → <b>DC Operator</b></div>
+      <div class="term">💬 <i>"I just want one chart for my article."</i> → <b>Press &amp; Influencer</b></div>
+    </div>
+
+    <div class="callout q"><b>Keep exploring:</b> the Reference section's <a href="#" onclick="showPage('lifecycle');return false;">Use Cases, Stakeholders &amp; Phases</a>
+    page has the project-phase timeline (Awareness → Onboarding &amp; Deploy) these personas move through, and the
+    <a href="#" onclick="showPage('bigpicture');return false;">How It All Fits Together</a> page ties this back to
+    Modules 1–5.</div>
+  </section>
+
+  <section class="page" id="lifecycle">
+    <div class="eyebrow">Reference</div>
+    <h1 class="title">Use Cases, Stakeholders &amp; Project Phases</h1>
+    <p class="subtitle">This page is grounded in the real stakeholder map for the configurator this portal has been
+    calling <b>Continuum</b> — documented elsewhere as <b>Mission Planner</b>, part of the broader "Sophia"
+    compute-in-orbit product. Same tool, two names; the content below uses the source document's own terms.</p>
+
+    <div class="callout q"><b>Source &amp; provenance:</b> this section is built from a stakeholder map grounded in
+    two sources: the original kickoff/journey docs, and July 2026 correspondence from a real deal (Thales). Anything
+    below tagged <span class="tag-confirmed">✓ confirmed in a real deal</span> is a detail the original docs didn't
+    predict — it's real-world evidence, not an assumption.</div>
+
+    <h2 class="sec">Who's in the room: five stakeholders</h2>
+    <p>Unlike Modules 1–5 (which are about engineering roles), the people who actually decide whether to <i>buy</i>
+    Mission Planner / Sophia fall into five distinct buyer personas — each running a completely different evaluation,
+    for a different reason.</p>
+
+    <div class="persona-legend">
+      <span class="k"><span class="sw" style="background:var(--ndd-blue-900)"></span>Business Manager</span>
+      <span class="k"><span class="sw" style="background:var(--ndd-cyan)"></span>Technical Expert</span>
+      <span class="k"><span class="sw" style="background:var(--ndd-pink)"></span>Procurement Officer</span>
+      <span class="k"><span class="sw" style="background:var(--ndd-ink)"></span>DC Operator</span>
+      <span class="k"><span class="sw" style="background:var(--ndd-gray-500)"></span>Press &amp; Influencer</span>
+    </div>
+
+    <div class="card">
+      <svg viewBox="0 0 720 440" width="100%" style="max-width:680px;display:block;margin:0 auto;">
+        <!-- independent-track connectors (dashed = no routing through BM/TE) -->
+        <line x1="360" y1="240" x2="150" y2="340" stroke="#9B9B9B" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <line x1="360" y1="240" x2="570" y2="340" stroke="#9B9B9B" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <!-- BM/TE relationship loop -->
+        <path d="M330,110 Q420,140 450,175" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrowhead)"/>
+        <text x="345" y="128" font-size="11" fill="#000000" font-weight="bold">forwards claims to</text>
+        <path d="M450,195 Q400,165 340,130" fill="none" stroke="#000000" stroke-width="1.8" marker-end="url(#arrowhead)"/>
+        <text x="368" y="185" font-size="11" fill="#000000" font-weight="bold">validates &amp; signs</text>
+        <!-- PI seeds awareness toward BM -->
+        <path d="M195,120 Q260,120 300,100" fill="none" stroke="#9B9B9B" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+        <text x="170" y="105" font-size="11" fill="#4B4B4B">seeds awareness</text>
+        <defs>
+          <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M1,1 L9,5 L1,9 Z" fill="#000000"/>
+          </marker>
+        </defs>
+        <!-- center: the decision -->
+        <circle cx="360" cy="240" r="62" fill="#000000"/>
+        <text x="360" y="235" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="bold">THE PURCHASE</text>
+        <text x="360" y="251" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="bold">DECISION</text>
+        <!-- Business Manager -->
+        <circle cx="330" cy="90" r="52" fill="var(--ndd-blue-900)" stroke="#000" stroke-width="2"/>
+        <text x="330" y="85" text-anchor="middle" fill="#FFFFFF" font-size="11.5" font-weight="bold">BUSINESS</text>
+        <text x="330" y="99" text-anchor="middle" fill="#FFFFFF" font-size="11.5" font-weight="bold">MANAGER</text>
+        <!-- Technical Expert -->
+        <circle cx="500" cy="205" r="50" fill="var(--ndd-cyan)" stroke="#000" stroke-width="2"/>
+        <text x="500" y="200" text-anchor="middle" fill="#000000" font-size="11" font-weight="bold">TECHNICAL</text>
+        <text x="500" y="214" text-anchor="middle" fill="#000000" font-size="11" font-weight="bold">EXPERT</text>
+        <!-- Press & Influencer -->
+        <circle cx="150" cy="90" r="48" fill="var(--ndd-gray-500)" stroke="#000" stroke-width="2"/>
+        <text x="150" y="85" text-anchor="middle" fill="#000000" font-size="10.5" font-weight="bold">PRESS &amp;</text>
+        <text x="150" y="98" text-anchor="middle" fill="#000000" font-size="10.5" font-weight="bold">INFLUENCER</text>
+        <!-- Procurement Officer -->
+        <circle cx="120" cy="370" r="52" fill="var(--ndd-pink)" stroke="#000" stroke-width="2"/>
+        <text x="120" y="365" text-anchor="middle" fill="#000000" font-size="10.5" font-weight="bold">PROCUREMENT</text>
+        <text x="120" y="379" text-anchor="middle" fill="#000000" font-size="10.5" font-weight="bold">OFFICER</text>
+        <text x="120" y="410" text-anchor="middle" fill="#4B4B4B" font-size="10">independent track</text>
+        <!-- DC Operator -->
+        <circle cx="600" cy="370" r="52" fill="var(--ndd-ink)" stroke="#000" stroke-width="2"/>
+        <text x="600" y="365" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="bold">DC</text>
+        <text x="600" y="379" text-anchor="middle" fill="#FFFFFF" font-size="12" font-weight="bold">OPERATOR</text>
+        <text x="600" y="410" text-anchor="middle" fill="#4B4B4B" font-size="10">independent track</text>
+      </svg>
+      <p style="text-align:center;font-size:12.5px;color:var(--muted);margin-top:6px;">Simplified from the source
+      stakeholder map: Business Manager and Technical Expert work the same deal together; Procurement Officer and DC
+      Operator run entirely separate evaluations with no documented handoff to anyone else; Press &amp; Influencer
+      sits outside every deal and only seeds early awareness.</p>
+    </div>
+
+    <div class="grid2" style="margin-top:18px;">
+      <div class="persona-card p-bm">
+        <h4>Business Manager</h4>
+        <span class="role-tag">Owns the purchase decision · space-industry track</span>
+        <dl>
+          <dt>Who they are</dt><dd>Wants to buy Sophia for a space mission their company is building; decides if it's worth the money.</dd>
+          <dt>What they need</dt><dd>A defensible, dollar-denominated case (CapEx vs. OpEx, program risk) they can hand upward without a meeting.</dd>
+          <dt>What they do</dt><dd>Sponsors the configuration, sets budget guardrails, forwards technical claims to their Technical Expert.</dd>
+          <dt>Ideal outcome</dt><dd>A Trade Study PDF credible enough to socialize internally and convert into a signed deal.</dd>
+        </dl>
+        <span class="tag-confirmed">✓ confirmed in a real deal</span>
+        <div class="deal-note">Trust survives an <i>honest, corrected</i> pricing mistake — the correction itself became a trust-building moment, not a deal-breaker.</div>
+      </div>
+      <div class="persona-card p-te">
+        <h4>Technical Expert</h4>
+        <span class="role-tag">No purchase authority · deal can't close without their sign-off</span>
+        <dl>
+          <dt>Who they are</dt><dd>Works with the Business Manager; their job is to check the numbers are real before their company signs anything.</dd>
+          <dt>What they need</dt><dd>Source-cited, substitutable models — their own measured TOPS, their own ground-contact schedule.</dd>
+          <dt>What they do</dt><dd>Cross-checks stats against data sheets and signs the technical annex required before the deal can close.</dd>
+          <dt>Ideal outcome</dt><dd>Signs off confident every figure is defensible; starts Onboarding already fluent in the toolchain.</dd>
+        </dl>
+        <span class="tag-confirmed">✓ confirmed in a real deal</span>
+        <div class="deal-note">Can be an <i>external contracted validator</i> (e.g. a research partner brought in by the buyer) — not always in-house staff.</div>
+      </div>
+      <div class="persona-card p-po">
+        <h4>Procurement Officer</h4>
+        <span class="role-tag">Independent track · called the "highest-value" audience overall</span>
+        <dl>
+          <dt>Who they are</dt><dd>A government buyer who wants Sophia's onboard AI computer to fly on satellites for a military mission — but must follow strict rules with paperwork that survives an audit.</dd>
+          <dt>What they need</dt><dd>Institutional-legitimacy cues (JPL/Microsoft pedigree, DoD Architecture Framework/JCIDS) and survivable rigor.</dd>
+          <dt>What they do</dt><dd>Runs the constellation-scale model independently and stress-tests the resulting document's rigor, not its polish.</dd>
+          <dt>Ideal outcome</dt><dd>A Source-Selection-ready trade study attachable to a pre-RFP technical assessment with no rework.</dd>
+        </dl>
+        <span class="tag-confirmed">✓ confirmed in a real deal</span>
+        <div class="deal-note">Concretely needs, before signing: refund policy, 90-day minimum commitment structure, IP/distribution rights, and a data-isolation guarantee.</div>
+      </div>
+      <div class="persona-card p-dc">
+        <h4>DC Operator</h4>
+        <span class="role-tag">Independent track · no new evidence yet from the Thales deal</span>
+        <dl>
+          <dt>Who they are</dt><dd>Runs terrestrial data centers already; not building a space mission — just checking whether renting orbital compute could be cheaper than building more buildings.</dd>
+          <dt>What they need</dt><dd>A concrete kW-to-BLADE conversion, an architectural answer to maintenance risk, a sustainability-financing angle.</dd>
+          <dt>What they do</dt><dd>Maps residual workload fit and sizes kW-to-BLADE equivalents against their own fleet numbers.</dd>
+          <dt>Ideal outcome</dt><dd>A board-ready Orbital Compute Audit supporting a sustainability-linked financing decision.</dd>
+        </dl>
+      </div>
+      <div class="persona-card p-pi">
+        <h4>Press &amp; Influencer</h4>
+        <span class="role-tag">Outside every deal · seeds Awareness only, no new evidence yet</span>
+        <dl>
+          <dt>Who they are</dt><dd>Not buying anything — just wants one cool fact or chart to put in an article or post.</dd>
+          <dt>What they need</dt><dd>One compelling, ungated stat or visual, reusable without an email/login gate.</dd>
+          <dt>What they do</dt><dd>Arrives cold from a press release or newsletter and shares the output immediately.</dd>
+          <dt>Ideal outcome</dt><dd>A widely reshared chart/stat that seeds Awareness for the other four stakeholders.</dd>
+        </dl>
+      </div>
+      <div class="card tight" style="background:var(--ndd-gray-100);">
+        <h4 style="margin:0 0 8px;font-weight:400;color:#000;">⚠️ Cross-cutting risk <span class="tag-confirmed">✓ confirmed in a real deal</span></h4>
+        <p style="margin:0;font-size:13.5px;"><b>Data isolation gap</b> — no hypervisor between co-tenants; a
+        client-admitted risk that touches both the Business Manager and Technical Expert tracks at once, not just one persona.</p>
+      </div>
+    </div>
+
+    <div class="callout"><b>Real example:</b> Julian (owns the client's IMAGIN-e program — a Business Manager) and
+    Alejandro (their AI architect — a Technical Expert) were on the <i>same call</i>, making a joint decision — a
+    reminder that the BM→TE handoff shown above is often a conversation, not a relay race.</div>
+
+    <h2 class="sec">Real use cases, by stakeholder</h2>
+    <p>These are the actual example programs each persona configures in Mission Planner — not generic categories:</p>
+    <div class="grid3">
+      <div class="term"><span class="role-tag" style="margin-bottom:6px;">Press &amp; Influencer</span><b>☀️ Synthetic Weather Forecast</b> — a single shareable chart, produced via Quick Benchmark in under 60 seconds, no configurator needed.</div>
+      <div class="term"><span class="role-tag" style="margin-bottom:6px;">Business Manager · Technical Expert</span><b>⚖️ Budget/Risk framing vs. technical validation</b> — the same configuration, read two ways: one for cost defensibility, one for engineering rigor.</div>
+      <div class="term"><span class="role-tag" style="margin-bottom:6px;">Procurement Officer</span><b>🎯 Hypersonic/SDA Modeling</b> — a defense scenario built to read as a neutral engineering report, not a sales document.</div>
+      <div class="term"><span class="role-tag" style="margin-bottom:6px;">Procurement Officer</span><b>📡 SDA Sensor Fusion</b> — a second defense configuration, independently modeled at constellation scale.</div>
+      <div class="term"><span class="role-tag" style="margin-bottom:6px;">DC Operator</span><b>🖥️ Non-hyperscale AI inference burst + backup/DR</b> — sized to a 5–50kW tier, framed as a federated extension of an existing terrestrial fleet.</div>
+    </div>
+
+    <h2 class="sec">Project phases: Awareness to Onboarding</h2>
+    <p>The real project timeline has two phases, matching the client's own journey-matrix framework: <b>Phase II —
+    Mission Planner</b>, where a stakeholder configures and evaluates a scenario, and <b>Phase III — Onboarding &amp;
+    Deploy</b>, once a deal converts.</p>
+
+    <div class="card">
+      <div class="grid3" style="grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:8px;">
+        <div class="flowstep" style="background:var(--ndd-blue-50);"><b>Awareness</b></div>
+        <div class="flowstep" style="background:var(--ndd-blue-50);"><b>Orientation</b></div>
+        <div class="flowstep" style="background:var(--ndd-blue-50);"><b>Configuration</b></div>
+        <div class="flowstep" style="background:var(--ndd-blue-50);"><b>Results</b></div>
+        <div class="flowstep" style="background:var(--ndd-blue-900);border-color:#000;"><b style="color:#fff;">Conversion</b></div>
+      </div>
+      <p style="text-align:center;font-size:11.5px;color:var(--muted);margin:8px 0 0;">Phase II — Mission Planner</p>
+      <div style="text-align:center;color:#000;font-size:18px;margin:8px 0;">↓</div>
+      <div class="flowstep" style="background:#000;border-color:#000;"><b style="color:#fff;">Onboarding &amp; Deploy</b></div>
+      <p style="text-align:center;font-size:11.5px;color:var(--muted);margin:8px 0 0;">Phase III — SOOS</p>
+    </div>
+
+    <div class="callout q"><b>Three deal structures, still to validate:</b> the source journey matrix defines three
+    parallel mission tracks — <b>Mission 1</b> (hosted · rent), <b>Mission 2</b> (own hardware), and <b>Mission 3</b>
+    (buy or lease) — plus a shared/mission-agnostic row. Based on persona descriptions above, DC Operator maps most
+    naturally to Mission 1 (renting capacity), Procurement Officer to Mission 2 (defense buyers typically need
+    dedicated, owned hardware), and Business Manager to Mission 3 (buying or leasing for their own program) — but
+    this mapping isn't explicitly stated in either source document. Flagging it here exactly as the template itself
+    says: <i>validate live with the client</i> before treating it as fact.</div>
+  </section>
+  <section class="page" id="glossary">
+    <div class="eyebrow">Reference</div>
+    <h1 class="title">Glossary</h1>
+    <p class="subtitle">Every term from this portal, in one place. Start typing to filter.</p>
+
+    <input class="glossary-search" id="glossary-search" type="text" placeholder="Search terms, e.g. 'eclipse', 'mass', 'RAAN'..." oninput="filterGlossary()" aria-controls="glossary-list" role="searchbox">
+
+    <div class="glossary-count" id="glossary-count" aria-live="polite">Loading terms…</div>
+    <div id="glossary-list"></div>
+
+    <script>
+      const GLOSSARY = [
+        ["Project","A workspace that can hold many missions — like a folder.","Mission Basics"],
+        ["Mission","One specific spacecraft design + orbit + goal — like a file inside a project.","Mission Basics"],
+        ["Mission Guide","A step-by-step wizard for starting a mission: Orbit → Payload → Vendor.","Mission Basics"],
+        ["Orbit","A repeating path around a body, held in balance between gravity and forward velocity.","Orbital Mechanics"],
+        ["Central Body","The object (e.g. Earth or Moon) whose gravity a spacecraft orbits around.","Orbital Mechanics"],
+        ["Semi-major axis (a)","Half the 'long way across' an orbit's ellipse — its overall size.","Orbital Mechanics"],
+        ["Eccentricity (e)","How stretched/oval an orbit is, from 0 (circle) to nearly 1 (long ellipse).","Orbital Mechanics"],
+        ["Inclination (i)","How tilted an orbit's plane is relative to the equator.","Orbital Mechanics"],
+        ["RAAN (Ω)","Right ascension of the ascending node — which way the tilted orbital plane is rotated in space.","Orbital Mechanics"],
+        ["Argument of Perigee (ω)","Where the closest point of the orbit sits within its tilted plane.","Orbital Mechanics"],
+        ["True Anomaly (ν)","Where the spacecraft currently sits along its orbital path.","Orbital Mechanics"],
+        ["Perigee","The point in an orbit closest to the central body.","Orbital Mechanics"],
+        ["Apogee","The point in an orbit farthest from the central body.","Orbital Mechanics"],
+        ["Trajectory","A spacecraft's full 3D path through space over time.","Orbital Mechanics"],
+        ["Ground Track","The path traced on Earth's surface directly below a spacecraft's trajectory.","Orbital Mechanics"],
+        ["Point Mass (gravity model)","Treats a planet as a perfect sphere with gravity pulling from one central point.","Orbital Mechanics"],
+        ["J2","A gravity model correction accounting for a planet's equatorial bulge.","Orbital Mechanics"],
+        ["Spherical Harmonics","The most detailed gravity model, capturing a planet's full, uneven gravity field.","Orbital Mechanics"],
+        ["Atmospheric Drag","Friction from leftover air molecules that slowly saps a low orbit's energy and altitude.","Orbital Mechanics"],
+        ["Eclipse","The period each orbit when a body blocks sunlight from reaching the spacecraft.","Orbital Mechanics"],
+        ["Clouds (modeling)","Statistical cloud cover used to estimate how often optical imaging is actually possible.","Orbital Mechanics"],
+        ["Bus","The part of a spacecraft providing structure, power, computing, and communications — everything but the payload.","Spacecraft & Payload"],
+        ["Payload","The mission-specific instrument or hardware that accomplishes the mission's actual goal.","Spacecraft & Payload"],
+        ["Vendor","The company or manufacturer supplying a piece of spacecraft hardware.","Spacecraft & Payload"],
+        ["Requirement","A measurable rule the finished mission design must satisfy.","Spacecraft & Payload"],
+        ["Mass Budget","An accounting of every subsystem's weight, checked against the rocket's lift capacity.","Spacecraft & Payload"],
+        ["Power Budget","A balance sheet of power generated (solar) vs. power consumed by every subsystem.","Spacecraft & Payload"],
+        ["Margin","Deliberately reserved extra mass, power, or capacity to absorb design uncertainty.","Spacecraft & Payload"],
+        ["Solar Radiation Pressure","A tiny force from sunlight itself that can nudge a spacecraft's orbit over time.","Spacecraft & Payload"],
+        ["Third-body Gravity","Gravitational pull from bodies other than the central body (e.g. the Sun or Moon).","Spacecraft & Payload"],
+        ["Discrete Target","A specific individual point (lat/long location) a mission cares about.","Targets & Ground Assets"],
+        ["Regional Target","An entire area — custom-drawn, a country, or the whole world — a mission cares about.","Targets & Ground Assets"],
+        ["Resolution (lat/long)","The size of each grid cell used to evaluate coverage across a regional target.","Targets & Ground Assets"],
+        ["Ground Asset / Ground Station","A ground-based antenna used to send commands to and receive data from a spacecraft.","Targets & Ground Assets"],
+        ["Uplink","Commands sent from a ground station up to the spacecraft.","Targets & Ground Assets"],
+        ["Downlink","Data sent from the spacecraft down to a ground station.","Targets & Ground Assets"],
+        ["J2000","A fixed, star-referenced coordinate frame used for describing orbits independent of Earth's rotation.","Reading Results"],
+        ["IAU (body-fixed frame)","A coordinate frame that rotates with the central body — used to compute ground tracks.","Reading Results"],
+        ["Spacecraft Timeline","A combined chart of eclipse, target-visibility, and ground-station windows over time.","Reading Results"],
+        ["Sizing Outputs","Final hardware specifications (solar area, battery capacity, propellant mass, etc.) derived from the full analysis.","Reading Results"],
+      ];
+      // Same module-color mapping used sitewide, so glossary tags reinforce the same wayfinding colors.
+      const TAG_MOD = {
+        "Mission Basics":"core", "Orbital Mechanics":"orbit", "Spacecraft & Payload":"space",
+        "Targets & Ground Assets":"target", "Reading Results":"core"
+      };
+      const TAG_DOT = {core:"#0013FF", orbit:"#5ECDFA", space:"#EB5DC9", target:"#FFE600"};
+      function renderGlossary(list){
+        const el = document.getElementById('glossary-list');
+        el.innerHTML = list.map(([term,def,tag])=>{
+          const dotColor = TAG_DOT[TAG_MOD[tag]] || '#9B9B9B';
+          return `<div class="gterm"><h4><span class="nav-dot" style="background:${dotColor}"></span>${term} <span class="tag">· ${tag}</span></h4><p style="margin:0;font-size:13.5px;">${def}</p></div>`;
+        }).join('');
+        const count = document.getElementById('glossary-count');
+        const q = document.getElementById('glossary-search').value;
+        count.textContent = q ? `${list.length} of ${GLOSSARY.length} terms match "${q}"` : `Showing all ${GLOSSARY.length} terms`;
+      }
+      function filterGlossary(){
+        const q = document.getElementById('glossary-search').value.toLowerCase();
+        renderGlossary(GLOSSARY.filter(([t,d])=> t.toLowerCase().includes(q) || d.toLowerCase().includes(q)));
+      }
+      renderGlossary(GLOSSARY);
+    </script>
+  </section>
+  <section class="page" id="bigpicture">
+    <div class="eyebrow">Reference</div>
+    <h1 class="title">How It All Fits Together</h1>
+    <p class="subtitle">Every concept in this portal lives somewhere on this one diagram.</p>
+
+    <div class="card">
+      <div class="flowstep" style="background:var(--ndd-blue-50);border-color:var(--ndd-blue-900);margin-bottom:14px;">📁 <b>Project</b> → 🚀 <b>Mission</b> (Module 1)</div>
+      <div style="text-align:center;color:var(--accent);font-size:18px;">↓</div>
+      <div class="grid2" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin:14px 0;">
+        <div class="flowstep" onclick="showPage('m2-orbit')" style="cursor:pointer;background:rgba(94,205,250,.18);border-color:#000;">
+          🌐 <b>Orbit</b><br><span style="font-size:11.5px;color:var(--ndd-ink)">elements · gravity · drag · eclipse</span></div>
+        <div class="flowstep" onclick="showPage('m3-anatomy')" style="cursor:pointer;background:rgba(235,93,201,.16);border-color:#000;">
+          🛰️ <b>Spacecraft</b><br><span style="font-size:11.5px;color:var(--ndd-ink)">bus · payload · mass/power</span></div>
+        <div class="flowstep" onclick="showPage('m4-targets')" style="cursor:pointer;background:rgba(255,230,0,.22);border-color:#000;">
+          🎯 <b>Targets</b><br><span style="font-size:11.5px;color:var(--ndd-ink)">discrete · regional · resolution</span></div>
+        <div class="flowstep" onclick="showPage('m4-ground')" style="cursor:pointer;background:rgba(255,230,0,.22);border-color:#000;">
+          📡 <b>Ground Assets</b><br><span style="font-size:11.5px;color:var(--ndd-ink)">uplink · downlink</span></div>
+      </div>
+      <div style="text-align:center;color:var(--accent);font-size:18px;">↓</div>
+      <div class="flowstep" style="background:var(--ndd-white);border-color:var(--ndd-blue-900);border-width:2px;margin:14px 0;">⚙️ <b>Run Mission</b> — the simulation engine</div>
+      <div style="text-align:center;color:var(--accent);font-size:18px;">↓</div>
+      <div class="grid2" style="grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;">
+        <div class="flowstep" onclick="showPage('m5-trajectories')" style="cursor:pointer;background:var(--ndd-blue-50);">📈 <b>Trajectory & Element Plots</b></div>
+        <div class="flowstep" onclick="showPage('m5-timeline')" style="cursor:pointer;background:var(--ndd-blue-50);">📅 <b>Timeline</b></div>
+        <div class="flowstep" onclick="showPage('m5-budgets')" style="cursor:pointer;background:var(--ndd-blue-50);">📊 <b>Mass/Power Outputs</b></div>
+        <div class="flowstep" onclick="showPage('m5-sizing')" style="cursor:pointer;background:var(--ndd-blue-50);">📏 <b>Sizing Outputs</b></div>
+      </div>
+    </div>
+    <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:10px;">🔵 core/process &nbsp; 🩵 orbit &nbsp; 🩷 spacecraft &nbsp; 🟡 targets &amp; ground</p>
+
+    <div class="callout"><b>Tip:</b> click any box above to jump straight to that topic. If a results box reveals a
+    problem (e.g. a budget that doesn't close), the fix almost always lives in one of the four input boxes above it
+    — that feedback loop is the essence of mission design.</div>
+
+    <p style="text-align:center;margin-top:30px;"><span class="badge">Module 1</span><span class="badge">Module 2</span><span class="badge">Module 3</span><span class="badge">Module 4</span><span class="badge">Module 5</span></p>
+    <p style="text-align:center;color:var(--muted);font-size:13px;">That's the whole map. Revisit the <a href="#" onclick="showPage('glossary');return false;">Glossary</a> any time you need a quick refresher on a term.</p>
+  </section>
+
+  </main>
+</div>
+<script>
+// mod: which brand hero color this group belongs to. null/omitted = core (blue, scaffolding pages).
+const NAV = [
+  {group:"Start Here", items:[
+    {id:"home", icon:"🏠", label:"Welcome"},
+    {id:"overview", icon:"🛰️", label:"What Is Continuum?"},
+  ]},
+  {group:"Module 1 · Mission Basics", mod:"core", items:[
+    {id:"m1-basics", icon:"📁", label:"Projects & Missions"},
+  ]},
+  {group:"Module 2 · Orbital Mechanics", mod:"orbit", items:[
+    {id:"m2-orbit", icon:"🌐", label:"What Is an Orbit?"},
+    {id:"m2-bodies", icon:"🌍", label:"Central Bodies"},
+    {id:"m2-elements", icon:"📐", label:"Orbital Elements"},
+    {id:"m2-track", icon:"📈", label:"Trajectories & Ground Tracks"},
+    {id:"m2-gravity", icon:"⚖️", label:"Gravity Models"},
+    {id:"m2-drag", icon:"💨", label:"Atmospheric Drag"},
+    {id:"m2-eclipse", icon:"🌑", label:"Eclipses"},
+    {id:"m2-clouds", icon:"☁️", label:"Clouds"},
+  ]},
+  {group:"Module 3 · Spacecraft & Payload", mod:"space", items:[
+    {id:"m3-anatomy", icon:"🛰️", label:"Anatomy of a Spacecraft"},
+    {id:"m3-payload", icon:"🔭", label:"Payload & Vendors"},
+    {id:"m3-requirements", icon:"📋", label:"Requirements"},
+    {id:"m3-mass", icon:"⚙️", label:"Mass Budget"},
+    {id:"m3-power", icon:"🔋", label:"Power Budget"},
+    {id:"m3-forces", icon:"➕", label:"Mission Settings & Extra Forces"},
+  ]},
+  {group:"Module 4 · Targets & Ground Assets", mod:"target", items:[
+    {id:"m4-targets", icon:"🎯", label:"Discrete vs Regional Targets"},
+    {id:"m4-resolution", icon:"🔲", label:"Resolution"},
+    {id:"m4-ground", icon:"📡", label:"Ground Stations"},
+  ]},
+  {group:"Module 5 · Reading Results", mod:"core", items:[
+    {id:"m5-trajectories", icon:"🧭", label:"Trajectory & Element Plots"},
+    {id:"m5-timeline", icon:"📅", label:"Spacecraft Timeline"},
+    {id:"m5-budgets", icon:"📊", label:"Budget Outputs"},
+    {id:"m5-sizing", icon:"📏", label:"Sizing Outputs"},
+  ]},
+  {group:"Module 6 · Stakeholder Deep Dive", mod:"people", items:[
+    {id:"m6-overview", icon:"👥", label:"Overview & How to Use This"},
+    {id:"m6-bm", icon:"💼", label:"Business Manager"},
+    {id:"m6-te", icon:"🔬", label:"Technical Expert"},
+    {id:"m6-po", icon:"🏛️", label:"Procurement Officer"},
+    {id:"m6-dc", icon:"🖥️", label:"DC Operator"},
+    {id:"m6-pi", icon:"📣", label:"Press & Influencer"},
+    {id:"m6-compare", icon:"🔀", label:"Side-by-Side & Use Case Fit"},
+  ]},
+  {group:"Reference", items:[
+    {id:"lifecycle", icon:"🗂️", label:"Use Cases, Stakeholders & Phases"},
+    {id:"glossary", icon:"📖", label:"Glossary"},
+    {id:"bigpicture", icon:"🧩", label:"How It All Fits Together"},
+  ]},
+];
+
+function buildSidebar(){
+  const el = document.getElementById('sidebar');
+  let html = `<div class="brand"><div class="brand-badge">C</div><div><h1>Continuum</h1><span>Learning Portal</span></div></div>`;
+  NAV.forEach(g=>{
+    const dot = g.mod ? `<span class="nav-dot ${g.mod}" aria-hidden="true"></span>` : '';
+    html += `<div class="navgroup"><div class="navgroup-title">${dot}${g.group}</div>`;
+    g.items.forEach(it=>{
+      html += `<div class="navlink" data-id="${it.id}" tabindex="0" role="button" onclick="showPage('${it.id}')"><span class="navicon" aria-hidden="true">${it.icon}</span>${it.label}</div>`;
+    });
+    html += `</div>`;
+  });
+  el.innerHTML = html;
+}
+const ORDER = NAV.flatMap(g=>g.items.map(i=>i.id));
+// Map every page id to its module's color key, so eyebrow chips can be applied automatically
+// instead of hand-editing every page (single source of truth = NAV array above).
+const MOD_OF = {};
+NAV.forEach(g=>{ if(g.mod){ g.items.forEach(it=>{ MOD_OF[it.id]=g.mod; }); } });
+
+function showPage(id){
+  document.querySelectorAll('section.page').forEach(s=>s.classList.remove('active'));
+  const target = document.getElementById(id);
+  if(target) target.classList.add('active');
+  document.querySelectorAll('.navlink').forEach(n=>{
+    const isActive = n.dataset.id===id;
+    n.classList.toggle('active', isActive);
+    n.setAttribute('aria-current', isActive ? 'page' : 'false');
+  });
+  // Auto-apply the module color chip to this page's eyebrow, driven by the NAV mod mapping.
+  if(target){
+    const eyebrow = target.querySelector('.eyebrow');
+    const mod = MOD_OF[id];
+    if(eyebrow && mod){
+      eyebrow.classList.add('chip', mod);
+    }
+  }
+  try{ document.getElementById('main').scrollTo({top:0,behavior:'instant'}); }catch(e){}
+  try{ window.scrollTo({top:0,behavior:'instant'}); }catch(e){}
+  location.hash = id;
+  renderChartsFor(id);
+  closeMobileNav();
+}
+function addFooterNav(){
+  const labelOf = id => { for(const g of NAV){ for(const it of g.items){ if(it.id===id) return it.icon+' '+it.label; } } return id; };
+  ORDER.forEach((id,i)=>{
+    const sec = document.getElementById(id);
+    if(!sec) return;
+    const prevId = ORDER[i-1], nextId = ORDER[i+1];
+    const bar = document.createElement('div');
+    bar.className='footer-nav';
+    bar.innerHTML = `<div>${prevId? `<button class="navbtn" onclick="showPage('${prevId}')">← ${labelOf(prevId)}</button>`:''}</div>
+      <div>${nextId? `<button class="navbtn" onclick="showPage('${nextId}')">${labelOf(nextId)} →</button>`:''}</div>`;
+    sec.appendChild(bar);
+  });
+}
+
+// ---------- Mobile nav drawer ----------
+function syncMenuToggle(){
+  const btn = document.querySelector('.menu-toggle');
+  if(btn) btn.setAttribute('aria-expanded', document.body.classList.contains('nav-open') ? 'true' : 'false');
+}
+function openMobileNav(){ document.body.classList.add('nav-open'); syncMenuToggle(); }
+function closeMobileNav(){ document.body.classList.remove('nav-open'); syncMenuToggle(); }
+function toggleMobileNav(){ document.body.classList.toggle('nav-open'); syncMenuToggle(); }
+
+// ---------- Keyboard accessibility for click-driven elements ----------
+// Nav links get tabindex/role at creation time (above). Everything else that uses onclick in the
+// static page markup (home module cards, big-picture flow steps, quick-reference cards) is enhanced
+// here in one pass: gets tabindex/role if missing, and Enter/Space activates it like a real button.
+function makeClickablesKeyboardAccessible(){
+  document.querySelectorAll('[onclick]').forEach(el=>{
+    const tag = el.tagName.toLowerCase();
+    if(tag==='button' || tag==='a' || tag==='input') return; // already natively accessible
+    if(!el.hasAttribute('tabindex')) el.setAttribute('tabindex','0');
+    if(!el.hasAttribute('role')) el.setAttribute('role','button');
+    el.addEventListener('keydown', (e)=>{
+      if(e.key==='Enter' || e.key===' ' || e.key==='Spacebar'){
+        e.preventDefault();
+        el.click();
+      }
+    });
+  });
+}
+
+window.addEventListener('DOMContentLoaded', ()=>{
+  buildSidebar();
+  addFooterNav();
+  makeClickablesKeyboardAccessible();
+  const start = location.hash ? location.hash.replace('#','') : 'home';
+  showPage(ORDER.includes(start) ? start : 'home');
+});
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeMobileNav(); });
+function goNext(id){ const i=ORDER.indexOf(id); if(i>=0 && i<ORDER.length-1) showPage(ORDER[i+1]); }
+function goPrev(id){ const i=ORDER.indexOf(id); if(i>0) showPage(ORDER[i-1]); }
+const renderedCharts = {};
+function renderChartsFor(id){
+  if(chartRenderers[id] && !renderedCharts[id]){
+    try{ chartRenderers[id](); renderedCharts[id]=true; }
+    catch(e){ console.warn('Chart render skipped for', id, e); }
+  }
+}
+const chartRenderers = {};
+function imgFallback(el, label){ el.onerror=null; const d=document.createElement('div'); d.className='imgfallback'; d.innerHTML = '🖼️ Image unavailable — '+label; el.replaceWith(d); }
+</script>
+<script>
+// ---------- Chart.js global styling (NDD brand: monochrome + electric blue) ----------
+if(window.Chart){
+  Chart.defaults.color = '#4B4B4B';
+  Chart.defaults.borderColor = '#CDCDCD';
+  Chart.defaults.font.family = "'Chivo', 'Helvetica Neue', Arial, sans-serif";
+}
+// Full brand hero palette for CATEGORICAL chart fills (pie/doughnut/bar), where each color sits inside
+// a large filled, black-outlined shape plus a text legend — safe even though cyan/yellow/magenta fail
+// WCAG contrast as thin strokes. Line-chart strokes stay blue/charcoal/gray on purpose: a 2px cyan or
+// yellow line on a white canvas measures ~1.3-1.8:1 contrast and effectively disappears, so those are
+// reserved for filled blocks only (see brand guideline contrast table).
+const COLORS = {
+  ink:'#000000', charcoal:'#4B4B4B', gray:'#9B9B9B',
+  blue900:'#0013FF', blue700:'#2D3CFF', blue500:'#626DFB', blue300:'#8D96FF', blueTint:'#F1F2FF',
+  yellow:'#FFE600', cyan:'#5ECDFA', magenta:'#EB5DC9'
+};
+function baseOpts(extra){
+  return Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12,font:{size:11},color:'#272727'}}}}, extra||{});
+}
+
+chartRenderers['m2-track'] = function(){
+  // Ground track: several passes of a sine-wave-like path shifted westward each pass
+  const ctx1 = document.getElementById('chart-groundtrack');
+  if(ctx1){
+    const datasets = [0,1,2].map((p,idx)=>{
+      const shift = p*70;
+      const pts = [];
+      for(let lon=-180; lon<=180; lon+=4){
+        const lat = 45*Math.sin((lon+shift)*Math.PI/140);
+        pts.push({x:lon+ (shift>180?shift-360:0), y:lat});
+      }
+      return {label:'Pass '+(p+1), data:pts, borderColor:[COLORS.gray,COLORS.charcoal,COLORS.blue900][idx], backgroundColor:'transparent', borderWidth:2, pointRadius:0, tension:0.4};
+    });
+    new Chart(ctx1, {type:'line', data:{datasets}, options:baseOpts({
+      scales:{x:{type:'linear', min:-180,max:180, title:{display:true,text:'Longitude (°)',color:'#4B4B4B'}},
+               y:{min:-90,max:90, title:{display:true,text:'Latitude (°)',color:'#4B4B4B'}}}
+    })});
+  }
+  const ctx2 = document.getElementById('chart-altitude');
+  if(ctx2){
+    const labels=[], data=[];
+    for(let t=0;t<=360;t+=5){ labels.push(t); data.push(600 + 300*Math.cos(t*Math.PI/90)); }
+    new Chart(ctx2, {type:'line', data:{labels, datasets:[{label:'Altitude (km)', data, borderColor:COLORS.blue900, backgroundColor:'rgba(0,19,255,0.08)', fill:true, pointRadius:0, tension:0.35}]},
+      options:baseOpts({scales:{x:{title:{display:true,text:'Time (minutes)',color:'#4B4B4B'}}, y:{title:{display:true,text:'Altitude (km)',color:'#4B4B4B'}}}})});
+  }
+};
+
+chartRenderers['m2-drag'] = function(){
+  const ctx = document.getElementById('chart-decay');
+  if(!ctx) return;
+  const labels=[], fast=[], slow=[];
+  for(let d=0; d<=200; d+=10){ labels.push(d); fast.push(300*Math.exp(-d/40)); slow.push(700*Math.exp(-d/900)); }
+  new Chart(ctx, {type:'line', data:{labels, datasets:[
+    {label:'Starts at 300 km', data:fast, borderColor:COLORS.charcoal, backgroundColor:'transparent', pointRadius:0, tension:0.3},
+    {label:'Starts at 700 km', data:slow, borderColor:COLORS.blue900, backgroundColor:'transparent', pointRadius:0, tension:0.3},
+  ]}, options:baseOpts({scales:{x:{title:{display:true,text:'Days since start',color:'#4B4B4B'}}, y:{title:{display:true,text:'Altitude (km)',color:'#4B4B4B'}}}})});
+};
+
+chartRenderers['m3-mass'] = function(){
+  const ctx = document.getElementById('chart-mass');
+  if(!ctx) return;
+  new Chart(ctx, {type:'doughnut', data:{labels:['Structure','Power','Propulsion','Payload','Margin'],
+    datasets:[{data:[22,28,15,20,15], backgroundColor:[COLORS.charcoal,COLORS.blue900,COLORS.cyan,COLORS.magenta,COLORS.yellow], borderColor:'#000000', borderWidth:1.5}]},
+    options:baseOpts({plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},color:'#272727'}}, title:{display:true,text:'Example mass budget (% of total)',color:'#000000'}}})});
+};
+
+chartRenderers['m3-power'] = function(){
+  const ctx1 = document.getElementById('chart-power-gen');
+  if(ctx1){
+    const labels=[], data=[];
+    for(let t=0;t<=100;t+=4){ const inEclipse = t>60 && t<90; labels.push(t); data.push(inEclipse?0: 150*Math.sin((t/100)*Math.PI)+30); }
+    new Chart(ctx1, {type:'line', data:{labels, datasets:[{label:'Power generated (W)', data, borderColor:COLORS.blue900, backgroundColor:'rgba(0,19,255,0.08)', fill:true, pointRadius:0, stepped:false, tension:0.2}]},
+      options:baseOpts({scales:{x:{title:{display:true,text:'Minutes into orbit',color:'#4B4B4B'}}, y:{title:{display:true,text:'Watts',color:'#4B4B4B'}}}})});
+  }
+  const ctx2 = document.getElementById('chart-power-use');
+  if(ctx2){
+    new Chart(ctx2, {type:'doughnut', data:{labels:['Payload','Comms','Attitude Control','Computer','Thermal'],
+      datasets:[{data:[35,20,18,12,15], backgroundColor:[COLORS.magenta,COLORS.blue900,COLORS.cyan,COLORS.charcoal,COLORS.yellow], borderColor:'#000000', borderWidth:1.5}]},
+      options:baseOpts({plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},color:'#272727'}}}})});
+  }
+};
+
+chartRenderers['m5-trajectories'] = function(){
+  const ctx = document.getElementById('chart-elements');
+  if(!ctx) return;
+  const labels=[], data=[];
+  for(let t=0;t<=400;t+=5){ labels.push(t); data.push(650 + 280*Math.cos(t*Math.PI/85)); }
+  new Chart(ctx, {type:'line', data:{labels, datasets:[{label:'Altitude across 4 orbits (km)', data, borderColor:COLORS.blue900, backgroundColor:'rgba(0,19,255,0.08)', fill:true, pointRadius:0, tension:0.3}]},
+    options:baseOpts({scales:{x:{title:{display:true,text:'Time (minutes)',color:'#4B4B4B'}}, y:{title:{display:true,text:'Altitude (km)',color:'#4B4B4B'}}}})});
+};
+
+chartRenderers['m5-timeline'] = function(){
+  const ctx = document.getElementById('chart-timeline');
+  if(!ctx) return;
+  const rows = ['Eclipse','Target Visibility','Ground Station Contact'];
+  new Chart(ctx, {type:'bar', data:{labels:rows, datasets:[
+    {label:'Pass 1', data:[[10,42],[55,70],[75,95]], backgroundColor:COLORS.blue700, borderColor:'#000000', borderWidth:1, borderRadius:2},
+    {label:'Pass 2', data:[[100,132],[148,160],[165,180]], backgroundColor:COLORS.magenta, borderColor:'#000000', borderWidth:1, borderRadius:2},
+  ]}, options:baseOpts({indexAxis:'y', scales:{x:{title:{display:true,text:'Time (minutes)',color:'#4B4B4B'}}}})});
+};
+
+chartRenderers['m5-budgets'] = function(){
+  const ctx = document.getElementById('chart-budget-outcome');
+  if(!ctx) return;
+  new Chart(ctx, {type:'bar', data:{labels:['Mass (kg)','Power (W)'], datasets:[
+    {label:'Available / Planned', data:[220,180], backgroundColor:COLORS.blue900, borderColor:'#000000', borderWidth:1},
+    {label:'Required / Worst-case', data:[196,165], backgroundColor:COLORS.magenta, borderColor:'#000000', borderWidth:1},
+  ]}, options:baseOpts({scales:{y:{beginAtZero:true}}})});
+};
+</script>
+</body>
+</html>
